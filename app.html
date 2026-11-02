@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=Assistant:wght@400;600;700;800&family=Noto+Sans+KR:wght@500;700&display=swap">
 <style>
-/* Layout: phone-first app — sticky harbor header, one view at a time, fixed bottom tab bar. */
+/* Layout: phone-first app — sticky harbor header, one view at a time, photo-led cards, fixed bottom tab bar. */
 :root{
   --paper:#eef3f1;      /* sea-mist ground */
   --card:#ffffff;
@@ -13,10 +13,12 @@
   --line:#d3dfdc;
   --sea:#0e5c6e;        /* Haeundae deep water */
   --sea-soft:#d8ebe9;
-  --beacon:#d9432b;     /* red lighthouse */
+  --beacon:#d9432b;     /* red lighthouse — brand accent */
   --beacon-soft:#fbe3dc;
   --sun:#f2b134;        /* Gwangalli sunset */
-  --ok:#2f8a57;
+  --ok:#23824b; --ok-soft:#dcf1e4;   /* did it */
+  --no:#c62f2f; --no-soft:#fbe0df;   /* skipped it */
+  --hero:#0e5c6e; --ph-a:#14697c; --ph-b:#0d2a35;
   --head:#0d2a35; --head-fg:#f4f8f7;
   --shadow:0 1px 2px rgba(13,42,53,.06),0 6px 18px rgba(13,42,53,.06);
   --f-display:"Karantina","Assistant",system-ui,sans-serif;
@@ -25,11 +27,15 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --paper:#0a1a20;--card:#11252d;--ink:#e7f0ee;--muted:#93aab0;--line:#21404a;
-  --sea:#5cc1cf;--sea-soft:#14343d;--beacon:#ff7a5f;--beacon-soft:#3a1c17;--sun:#f5c25a;--ok:#5fc48a;
+  --sea:#5cc1cf;--sea-soft:#14343d;--beacon:#ff7a5f;--beacon-soft:#3a1c17;--sun:#f5c25a;
+  --ok:#5fcf8f;--ok-soft:#163a27;--no:#ff6b6b;--no-soft:#401a1c;
+  --hero:#0f4452;--ph-a:#13505f;--ph-b:#061117;
   --head:#061117;--head-fg:#e7f0ee;--shadow:0 1px 2px rgba(0,0,0,.3);color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#0a1a20;--card:#11252d;--ink:#e7f0ee;--muted:#93aab0;--line:#21404a;
-  --sea:#5cc1cf;--sea-soft:#14343d;--beacon:#ff7a5f;--beacon-soft:#3a1c17;--sun:#f5c25a;--ok:#5fc48a;
+  --sea:#5cc1cf;--sea-soft:#14343d;--beacon:#ff7a5f;--beacon-soft:#3a1c17;--sun:#f5c25a;
+  --ok:#5fcf8f;--ok-soft:#163a27;--no:#ff6b6b;--no-soft:#401a1c;
+  --hero:#0f4452;--ph-a:#13505f;--ph-b:#061117;
   --head:#061117;--head-fg:#e7f0ee;--shadow:0 1px 2px rgba(0,0,0,.3);color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -37,12 +43,13 @@ html{direction:rtl}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
   padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--head)}
+body.locked{overflow:hidden}
 a{color:var(--sea)}
 button{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 .kr{font-family:var(--f-kr);direction:ltr;unicode-bidi:isolate}
 .num{font-variant-numeric:tabular-nums}
-.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* header */
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--head);color:var(--head-fg)}
@@ -68,17 +75,28 @@ h3{margin:0;font-size:1.1rem;text-wrap:balance}
 .btn.primary{background:var(--sea);border-color:var(--sea);color:var(--card)}
 .btn.beacon{background:var(--beacon);border-color:var(--beacon);color:#fff}
 .btn.sm{padding:5px 10px;font-size:.8rem}
+.btn.ghost{background:none;border-style:dashed;color:var(--muted)}
+
+/* photo placeholder → real photo */
+.ph{position:relative;overflow:hidden;display:grid;place-items:center;background:linear-gradient(140deg,var(--ph-a),var(--ph-b));color:#fff;border:0;padding:0;cursor:pointer;max-width:100%}
+.ph > .kr{font-size:1.5rem;font-weight:700;opacity:.35;padding:8px;text-align:center;line-height:1.2}
+.ph::before{content:"";position:absolute;inset:auto -20% -50% -20%;height:80%;background:repeating-radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.08) 0 2px,transparent 2px 14px)}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s}
+.ph img.on{opacity:1}
+.ph .cam{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;font-size:.72rem;font-weight:700;padding:2px 8px;z-index:1}
 
 /* hero on today */
-.hero{background:var(--sea);color:#fff;border-radius:16px;padding:18px;display:grid;gap:10px;position:relative;overflow:hidden}
-.hero::after{content:"";position:absolute;inset:auto -10% -40% -10%;height:70%;background:repeating-radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.09) 0 2px,transparent 2px 16px);pointer-events:none}
+.hero{background:var(--hero);color:#fff;border-radius:16px;padding:18px;display:grid;gap:10px;position:relative;overflow:hidden;min-height:200px;align-content:end}
+.hero .bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity .5s}
+.hero .bg.on{opacity:1}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(5,20,26,.88) 10%,rgba(5,20,26,.35) 60%,rgba(5,20,26,.15))}
+.hero > *:not(.bg){position:relative;z-index:1}
 .hero .big{font-family:var(--f-display);font-size:3.2rem;line-height:.9;font-weight:700}
-.hero p{margin:0;opacity:.92}
-.hero .row .chip{background:rgba(255,255,255,.16);color:#fff}
-:root[data-theme="dark"] .hero{color:var(--paper)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hero{color:var(--paper)}}
-:root[data-theme="dark"] .hero .row .chip,
-:root:not([data-theme="light"]) .hero .row .chip{color:inherit}
+.hero p{margin:0;opacity:.95}
+.hero .chip{background:rgba(255,255,255,.18);color:#fff}
+.hero .eyebrow{color:#fff;opacity:.85}
+.next{display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:center}
+.next .ph{width:88px;height:88px;border-radius:12px}
 
 /* day strip */
 .days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
@@ -89,52 +107,119 @@ h3{margin:0;font-size:1.1rem;text-wrap:balance}
 .day-btn[aria-pressed="true"] span{color:inherit;opacity:.75}
 .day-btn.is-today{box-shadow:inset 0 -3px 0 var(--beacon)}
 
+/* progress */
+.prog{display:inline-flex;gap:6px;font-size:.8rem;font-weight:800}
+.prog .p-ok{color:var(--ok)} .prog .p-no{color:var(--no)} .prog .p-all{color:var(--muted)}
+.bar{display:flex;height:6px;border-radius:999px;overflow:hidden;background:var(--line);margin:8px 0 14px}
+.bar i{display:block;height:100%}
+.bar .b-ok{background:var(--ok)} .bar .b-no{background:var(--no)}
+
 /* timeline */
 .tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.tl li{display:grid;grid-template-columns:56px 22px 1fr;gap:0 8px;align-items:start}
-.tl .t{font-weight:800;font-size:.9rem;padding-top:2px;color:var(--sea)}
+.tl li{display:grid;grid-template-columns:46px 20px minmax(0,1fr);gap:0 6px;align-items:start}
+.tl .time{border:1px dashed transparent;background:none;font-weight:800;font-size:.92rem;color:var(--sea);cursor:pointer;padding:6px 2px;border-radius:6px;text-align:right}
+.tl .time:hover{border-color:var(--line)}
 .tl .dot{position:relative;align-self:stretch;display:flex;justify-content:center}
 .tl .dot::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--line)}
-.tl li:last-child .dot::before{bottom:auto;height:14px}
-.tl .dot input{position:relative;appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:2px 0 0;border-radius:50%;border:2px solid var(--sea);background:var(--card);cursor:pointer}
-.tl .dot input:checked{background:var(--ok);border-color:var(--ok)}
-.tl .dot input:checked::after{content:"";position:absolute;inset:3px 5px 5px 4px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
-.tl .body{padding-bottom:16px;min-width:0}
-.tl .body b{display:block}
-.tl .body p{margin:2px 0 4px;color:var(--muted);font-size:.92rem}
-.tl li.done .body b{text-decoration:line-through;opacity:.6}
-.tl .body .row{gap:6px}
+.tl li:last-child .dot::before{bottom:auto;height:18px}
+.tl .dot i{position:relative;margin-top:8px;width:20px;height:20px;border-radius:50%;border:2px solid var(--sea);background:var(--card);display:grid;place-items:center;font-style:normal;font-size:.75rem;font-weight:900;color:var(--card);line-height:1}
+.tl li.st-done .dot i{background:var(--ok);border-color:var(--ok)}
+.tl li.st-skip .dot i{background:var(--no);border-color:var(--no)}
+.tl .body{margin-bottom:12px;padding:8px 10px;border-radius:12px;border:1px solid transparent;min-width:0}
+.tl li.st-done .body{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.tl li.st-skip .body{background:var(--no-soft);border-color:color-mix(in srgb,var(--no) 30%,transparent)}
+.tl li.st-skip .body b{text-decoration:line-through;color:var(--no)}
+.tl li.st-done .body b{color:var(--ok)}
+.ib{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start}
+.ib b{display:block}
+.ib p{margin:2px 0 0;color:var(--muted);font-size:.92rem}
+.th{width:56px;height:56px;border-radius:10px}
+.th > .kr{font-size:.85rem}
+.acts{margin-top:8px;gap:6px}
+.st{border:1.5px solid currentColor;background:var(--card);border-radius:999px;padding:3px 11px;font-weight:800;font-size:.82rem;cursor:pointer;line-height:1.4}
+.st.ok{color:var(--ok)} .st.no{color:var(--no)}
+.st[aria-pressed="true"]{background:currentColor}
+.st[aria-pressed="true"] span{color:var(--card)}
+.ed-btn{border:none;background:none;color:var(--muted);font-weight:700;font-size:.8rem;cursor:pointer;padding:4px 6px;text-decoration:underline dotted}
+.edit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.edit .row{grid-column:1/-1}
+.tl-foot{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px}
 
 /* places */
 .filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
 .filters::-webkit-scrollbar{display:none}
 .filters button{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;font-weight:700;font-size:.85rem;cursor:pointer}
 .filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-.list{display:flex;flex-direction:column;gap:12px}
-.place{display:grid;gap:6px}
-.place header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.place header > div{min-width:0}
-.place .kr{color:var(--muted);font-size:.85rem;display:block;text-align:right}
-.place p{margin:0;font-size:.95rem}
-.place .tip{font-size:.88rem;color:var(--muted);border-inline-start:3px solid var(--sun);padding-inline-start:8px}
+.list{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:600px){.list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pcard{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.pcard > .ph{width:100%;aspect-ratio:16/10}
+.pcard .pad{padding:12px 14px 14px;display:grid;gap:6px}
+.pcard header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pcard header > div{min-width:0}
+.pcard .kr.sub{color:var(--muted);font-size:.85rem;display:block;text-align:right}
+.pcard p{margin:0;font-size:.95rem}
+.tip{font-size:.88rem;color:var(--muted);border-inline-start:3px solid var(--sun);padding-inline-start:8px;margin:0}
 .fav{flex:none;border:none;background:none;cursor:pointer;font-size:1.4rem;line-height:1;color:var(--line);padding:2px}
 .fav[aria-pressed="true"]{color:var(--beacon)}
 .meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.82rem;color:var(--muted)}
-.meta span b{color:var(--ink);font-weight:700}
+.meta b{color:var(--ink);font-weight:700}
+
+/* food tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:600px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tile{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;border:0;padding:0;cursor:pointer;text-align:right;box-shadow:var(--shadow)}
+.tile .ph{position:absolute;inset:0}
+.tile .ph > .kr{font-size:1.9rem;align-self:start;margin-top:14%}
+.tile .cap{position:absolute;inset:auto 0 0 0;padding:34px 10px 9px;background:linear-gradient(transparent,rgba(0,0,0,.82));color:#fff;z-index:1;display:grid;gap:0}
+.tile .cap b{font-size:1.02rem;line-height:1.2}
+.tile .cap span{font-size:.75rem;opacity:.85}
+.tile .price{position:absolute;top:8px;right:8px;z-index:1;background:rgba(0,0,0,.55);color:#fff;font-size:.72rem;font-weight:800;border-radius:999px;padding:2px 8px}
 
 /* hotel */
+.hotel{padding:0;overflow:hidden}
+.hotel > .ph{width:100%;aspect-ratio:21/9}
+.hotel .pad{padding:16px;display:grid;gap:12px}
 .hotel h3{font-family:var(--f-display);font-size:2rem;line-height:1;font-weight:700}
 .stars{color:var(--sun);letter-spacing:2px}
 dl.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}
 dl.kv dt{color:var(--muted);font-weight:600;font-size:.9rem}
 dl.kv dd{margin:0;font-weight:700;min-width:0;overflow-wrap:anywhere}
 
-/* taxi overlay */
-.taxi{position:fixed;inset:0;z-index:20;background:#fffdf5;color:#111;display:flex;flex-direction:column;justify-content:center;gap:18px;
+/* taxi overlay — deliberately fixed light for the driver */
+.taxi{position:fixed;inset:0;z-index:30;background:#fffdf5;color:#111;display:flex;flex-direction:column;justify-content:center;gap:18px;
   padding:calc(24px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));text-align:center}
 .taxi .kr{font-size:clamp(1.6rem,7vw,2.6rem);line-height:1.35;font-weight:700;display:block}
 .taxi .sub{font-size:1rem;color:#555}
-.taxi .btn{align-self:center}
+.taxi .btn{align-self:center;background:#0e5c6e;border-color:#0e5c6e;color:#fff}
+
+/* lightbox — deliberately dark in both themes, like a photo viewer */
+.lb{position:fixed;inset:0;z-index:25;background:#071318;color:#e8f0ef;overflow-y:auto;overscroll-behavior:contain;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.lb .x{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));z-index:2;width:42px;height:42px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:1.4rem;cursor:pointer}
+.gal{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;background:#000}
+.gal::-webkit-scrollbar{display:none}
+.gal figure{flex:0 0 100%;scroll-snap-align:center;margin:0;position:relative;height:min(62vh,560px);display:grid;place-items:center}
+.gal figure img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.gal figure.ph{height:min(50vh,420px);cursor:default}
+.gal figcaption{position:absolute;inset:auto 0 0 0;padding:20px 14px 8px;background:linear-gradient(transparent,rgba(0,0,0,.8));font-size:.8rem;color:#ddd}
+.lb .info{max-width:720px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px));display:grid;gap:10px}
+.lb h3{font-family:var(--f-display);font-size:2.2rem;line-height:1;font-weight:700}
+.lb .kr.sub{color:#9fb8bd;font-size:1rem}
+.lb p{margin:0}
+.lb .tip{color:#b6c9cc}
+.lb .count{font-size:.8rem;color:#9fb8bd;font-weight:700}
+.lb .meta,.lb .meta b{color:#c9d8da}
+.lb .btn{background:#13303a;border-color:#24505d;color:#e8f0ef}
+.lb .btn.primary{background:#5cc1cf;border-color:#5cc1cf;color:#071318}
+.lb .credit{font-size:.75rem;color:#7f989d}
+.lb .credit a{color:#9fd3db}
+
+/* bottom sheet */
+.sheet{position:fixed;inset:0;z-index:27;background:rgba(0,0,0,.45);display:flex;align-items:flex-end}
+.sheet form{background:var(--card);width:100%;max-width:720px;margin:0 auto;border-radius:18px 18px 0 0;display:grid;gap:12px;
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* phrases */
 .phr{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding-block:10px;border-bottom:1px solid var(--line)}
@@ -147,7 +232,7 @@ dl.kv dd{margin:0;font-weight:700;min-width:0;overflow-wrap:anywhere}
 .conv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field label{font-size:.8rem;font-weight:700;color:var(--muted)}
-.field input,.field select{font:inherit;font-size:1.1rem;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
+.field input,.field select{font:inherit;font-size:1.05rem;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%;min-width:0}
 .check{display:flex;gap:10px;align-items:flex-start;padding:7px 0;cursor:pointer}
 .check input{width:20px;height:20px;accent-color:var(--ok);flex:none;margin-top:2px}
 .check input:checked + span{text-decoration:line-through;opacity:.6}
@@ -169,13 +254,14 @@ details.card ul{margin:10px 0 0;padding-inline-start:20px;display:grid;gap:6px}
 /* tab bar */
 nav.tabs{position:fixed;inset:auto 0 0 0;z-index:6;background:var(--card);border-top:1px solid var(--line);
   padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
-nav.tabs .in{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+nav.tabs .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
 nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--muted);font-size:.72rem;font-weight:700;padding:4px 0;border-radius:10px}
 nav.tabs a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.tabs a[aria-current="page"]{color:var(--beacon);background:var(--beacon-soft)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-weight:700;font-size:.9rem;z-index:30}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:8px 16px;border-radius:999px;font-weight:700;font-size:.9rem;z-index:40;white-space:nowrap}
 @media (prefers-reduced-motion:no-preference){section.view{animation:rise .25s ease-out}@keyframes rise{from{transform:translateY(6px)}to{transform:none}}}
-@media (max-width:360px){.conv,.grid2{grid-template-columns:1fr}.brand{font-size:2rem}}
+@media (prefers-reduced-motion:reduce){.ph img,.hero .bg{transition:none}}
+@media (max-width:360px){.conv,.grid2,.edit{grid-template-columns:1fr}.brand{font-size:2rem}}
 </style>
 
 <header class="top">
@@ -190,6 +276,7 @@ nav.tabs a[aria-current="page"]{color:var(--beacon);background:var(--beacon-soft
 <!-- TODAY -->
 <section class="view" id="v-today" data-view="today">
   <div class="hero" id="hero"></div>
+  <div class="card" id="next-card"></div>
   <div class="card" id="today-plan"></div>
   <div class="grid2">
     <button class="btn beacon" type="button" data-taxi>🚕 כתובת המלון לנהג</button>
@@ -207,23 +294,23 @@ nav.tabs a[aria-current="page"]{color:var(--beacon);background:var(--beacon-soft
 
 <!-- PLAN -->
 <section class="view" id="v-plan" data-view="plan" hidden>
-  <div><h2 class="v">המסלול היומי</h2><p class="lede">5 ימים, כל יום אזור אחר כדי לא לבזבז זמן בתחבורה. סמן מה עשית.</p></div>
+  <div><h2 class="v">המסלול היומי</h2><p class="lede">התוכנית שלך, לא חוזה. לחץ על שעה כדי לשנות אותה או להעביר ליום אחר, סמן ✓ אם עשית ו-✗ אם ויתרת, והוסף מה שבא לך.</p></div>
   <div class="days" id="days" role="group" aria-label="בחר יום"></div>
   <div class="card" id="day-detail"></div>
 </section>
 
 <!-- PLACES -->
 <section class="view" id="v-places" data-view="places" hidden>
-  <div><h2 class="v">מקומות ואטרקציות</h2><p class="lede">הלב ♥ שומר מועדפים. "מפה" פותח חיפוש ב-Naver Map, שעובדת בקוריאה הרבה יותר טוב מגוגל.</p></div>
+  <div><h2 class="v">מקומות ואטרקציות</h2><p class="lede">לחץ על תמונה לגלריה. ♥ שומר מועדפים, ו"+ למסלול" מכניס את המקום לאיזה יום ושעה שתרצה.</p></div>
   <div class="filters" id="pf" role="group" aria-label="סינון לפי אזור"></div>
   <div class="list" id="places"></div>
 </section>
 
 <!-- FOOD -->
 <section class="view" id="v-food" data-view="food" hidden>
-  <div><h2 class="v">מה אוכלים בבוסאן</h2><p class="lede">מנות של בוסאן ומקומות שעובדים טוב לסועד יחיד. ₩ = זול, ₩₩₩ = יקר.</p></div>
+  <div><h2 class="v">מה אוכלים בבוסאן</h2><p class="lede">לחץ על מנה כדי לראות איך היא נראית, איפה אוכלים אותה ולהוסיף אותה למסלול.</p></div>
   <div class="filters" id="ff" role="group" aria-label="סינון אוכל"></div>
-  <div class="list" id="food"></div>
+  <div class="tiles" id="food"></div>
   <div class="card">
     <h3>אוכל לבד בקוריאה</h3>
     <ul style="margin:8px 0 0;padding-inline-start:20px;display:grid;gap:6px">
@@ -238,7 +325,9 @@ nav.tabs a[aria-current="page"]{color:var(--beacon);background:var(--beacon-soft
 <!-- STAY -->
 <section class="view" id="v-stay" data-view="stay" hidden>
   <div><h2 class="v">לינה</h2><p class="lede">ההזמנה שלך מאושרת.</p></div>
-  <div class="card hotel" style="display:grid;gap:12px">
+  <div class="card hotel">
+    <button class="ph" type="button" data-img="place:haeundae-beach" data-lb="place:haeundae-beach" aria-label="תמונות של חוף האונדה"><span class="kr">해운대</span><span class="cam">השכונה: חוף האונדה</span></button>
+    <div class="pad">
     <div><h3>Plea De Blanc Hotel &amp; Residence</h3><span class="stars" aria-label="4 כוכבים">★★★★</span></div>
     <dl class="kv">
       <dt>תאריכים</dt><dd class="num">ב׳ 2.11 ← ו׳ 6.11 · 4 לילות</dd>
@@ -252,6 +341,7 @@ nav.tabs a[aria-current="page"]{color:var(--beacon);background:var(--beacon-soft
       <button class="btn beacon" type="button" data-taxi>🚕 להראות לנהג</button>
       <button class="btn" type="button" id="copy-addr">העתק כתובת</button>
       <a class="btn" target="_blank" rel="noopener" href="https://map.naver.com/p/search/%ED%95%B4%EC%9A%B4%EB%8C%80%ED%95%B4%EB%B3%80%EB%A1%9C298%EB%B2%88%EA%B8%B8%2029">Naver Map</a>
+    </div>
     </div>
   </div>
   <div class="card">
@@ -349,12 +439,38 @@ nav.tabs a[aria-current="page"]{color:var(--beacon);background:var(--beacon-soft
 
 </main>
 
+<!-- photo viewer -->
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-labelledby="lb-title">
+  <button class="x" type="button" id="lb-close" aria-label="סגור">✕</button>
+  <div class="gal" id="lb-gal"></div>
+  <div class="info">
+    <div class="row" style="justify-content:space-between"><span class="count num" id="lb-count"></span><span class="credit" id="lb-credit"></span></div>
+    <div><h3 id="lb-title"></h3><span class="kr sub" id="lb-kr"></span></div>
+    <div id="lb-body" style="display:grid;gap:10px"></div>
+    <div class="row" id="lb-acts"></div>
+  </div>
+</div>
+
+<!-- add / edit sheet -->
+<div class="sheet" id="sheet" hidden>
+  <form id="sheet-form" aria-labelledby="sheet-h">
+    <div class="row" style="justify-content:space-between"><h3 id="sheet-h">הוספה למסלול</h3><button class="btn sm" type="button" id="sheet-close">ביטול</button></div>
+    <div class="field"><label for="a-title">מה עושים</label><input id="a-title" required placeholder="לדוגמה: קפה עם נוף לים"></div>
+    <div class="two">
+      <div class="field"><label for="a-day">יום</label><select id="a-day"></select></div>
+      <div class="field"><label for="a-time">שעה</label><input id="a-time" type="time" value="12:00"></div>
+    </div>
+    <div class="field"><label for="a-note">הערה (לא חובה)</label><input id="a-note" placeholder="עם מי, מה להזמין…"></div>
+    <button class="btn primary" type="submit">הוסף למסלול</button>
+  </form>
+</div>
+
 <div class="taxi" id="taxi" hidden role="dialog" aria-label="כתובת המלון לנהג מונית">
   <span class="kr" style="font-size:1.4rem">이 주소로 가 주세요</span>
   <span class="kr">부산광역시 해운대구<br>해운대해변로298번길 29</span>
   <span class="kr" style="font-size:1.3rem">Plea De Blanc Hotel &amp; Residence</span>
   <span class="sub">"בבקשה לסוע לכתובת הזו" — הראה לנהג את המסך</span>
-  <button class="btn primary" type="button" id="taxi-close">סגור</button>
+  <button class="btn" type="button" id="taxi-close">סגור</button>
 </div>
 
 <nav class="tabs" aria-label="ניווט ראשי">
@@ -372,27 +488,29 @@ nav.tabs a[aria-current="page"]{color:var(--beacon);background:var(--beacon-soft
 <script>
 (function(){
 "use strict";
-/* ---------- storage (per device, optional) ---------- */
-var S={get:function(k,d){try{var v=localStorage.getItem("roi-busan:"+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
-       set:function(k,v){try{localStorage.setItem("roi-busan:"+k,JSON.stringify(v))}catch(e){}}};
-function $(s,r){return (r||document).querySelector(s)}
-function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
-function naver(q){return "https://map.naver.com/p/search/"+encodeURIComponent(q)}
-function toast(msg){var t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(function(){t.hidden=true},1800)}
-function fmtKRW(n){return "₩"+Math.round(n).toLocaleString("en-US")}
+/* ---------- helpers ---------- */
+const S={get(k,d){try{const v=localStorage.getItem("roi-busan:"+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+         set(k,v){try{localStorage.setItem("roi-busan:"+k,JSON.stringify(v))}catch(e){}},
+         del(k){try{localStorage.removeItem("roi-busan:"+k)}catch(e){}}};
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const naver=q=>"https://map.naver.com/p/search/"+encodeURIComponent(q);
+const gimg=q=>"https://www.google.com/search?tbm=isch&q="+encodeURIComponent(q);
+const fmtKRW=n=>"₩"+Math.round(n).toLocaleString("en-US");
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true},1900)}
 
 /* ---------- data ---------- */
-var AREAS={haeundae:"האונדה",east:"מזרח וגיג'אנג",gwangan:"גוואנאלי ונאם-גו",old:"העיר העתיקה",yeongdo:"יונגדו",seomyeon:"סומיון וסנטום"};
+const AREAS={haeundae:"האונדה",east:"מזרח וגיג'אנג",gwangan:"גוואנאלי ונאם-גו",old:"העיר העתיקה",yeongdo:"יונגדו",seomyeon:"סומיון וסנטום"};
 
-var DAYS=[
+const DAYS=[
  {date:"2026-11-02",dow:"ב׳",title:"נחיתה והאונדה",area:"האונדה",kr:"해운대",items:[
   {t:"15:00",h:"צ׳ק-אין במלון",d:"משאירים תיקים, מקלחת, ויוצאים. הכתובת לנהג בכפתור האדום."},
   {t:"16:00",h:"הליכה לאורך חוף האונדה עד האי דונגבק",d:"טיילת חוף לאורך כל המפרץ, ובסופה שביל מסביב לאי עם מגדלור ונוף לגשר גוואנאן.",p:"dongbaek"},
   {t:"17:25",h:"שקיעה ב-The Bay 101",d:"מרינה עם מגדלי מראה. בערב הקירות מאירים — הספוט הכי מצולם בהאונדה.",p:"bay101"},
   {t:"19:00",h:"ארוחת ערב בשוק המסורתי של האונדה",d:"טטאוקבוקי, אומוק ודגים מטוגנים בדוכנים. זול ומהיר.",f:"haeundae-market"},
   {t:"20:30",h:"Busan X the Sky — תצפית מהקומה ה-100",d:"נוף לילה על כל החוף. כרטיס זול יותר ב-Klook.",p:"xsky"},
-  {t:"22:00",h:"צ׳ימק (עוף מטוגן ובירה) ליד החוף",d:"דרך טובה לסגור יום ראשון ולהתאקלם."}]},
+  {t:"22:00",h:"צ׳ימק (עוף מטוגן ובירה) ליד החוף",d:"דרך טובה לסגור יום ראשון ולהתאקלם.",f:"chimaek"}]},
  {date:"2026-11-03",dow:"ג׳",title:"החוף המזרחי",area:"מזרח וגיג'אנג",kr:"동부해안",items:[
   {t:"09:00",h:"Sky Capsule מ-Mipo לצ׳ונגסאפו",d:"קרונית זוגית צבעונית על מסילה מעל הים. להזמין מראש אונליין — נגמר מהר.",p:"blueline"},
   {t:"10:00",h:"גשר התצפית דאריטדול בצ׳ונגסאפו",d:"מזח עם רצפת זכוכית מעל הגלים, ומגדלורים אדום ולבן.",p:"cheongsapo"},
@@ -407,7 +525,7 @@ var DAYS=[
   {t:"14:00",h:"כיכר BIFF ושוק גוקג׳ה",d:"סיאט הוטוק (פנקייק ממולא זרעים) ברחוב, וסמטאות שוק אינסופיות.",p:"biff",f:"hotteok"},
   {t:"15:30",h:"פארק יונגדוסאן ומגדל בוסאן",d:"תצפית על הנמל. מדרגות נעות מרחוב גוואנבוק.",p:"tower"},
   {t:"17:00",h:"כפר הינייאול ביונגדו",d:"סמטה לבנה על צוק מעל הים, בתי קפה עם נוף לשקיעה. מונית קצרה מנאמפו.",p:"huinnyeoul"},
-  {t:"19:30",h:"שוק הלילה בופיונג קקנגטונג",d:"דוכני רחוב — מנדו, ביבים דנגמיון, אומוק. נפתח בערב.",p:"bupyeong"}]},
+  {t:"19:30",h:"שוק הלילה בופיונג קקנגטונג",d:"דוכני רחוב — מנדו, ביבים דנגמיון, אומוק. נפתח בערב.",p:"bupyeong",f:"bibimdangmyeon"}]},
  {date:"2026-11-05",dow:"ה׳",title:"צוקים, גוואנאלי וסומיון",area:"גוואנאלי ונאם-גו",kr:"광안리",items:[
   {t:"09:30",h:"Oryukdo Skywalk",d:"גשר זכוכית מעל צוקים בנקודה שבה נפגשים הים המזרחי והדרומי.",p:"oryukdo"},
   {t:"10:30",h:"שביל החוף איגידה",d:"כ-4.7 ק״מ של שביל צוקים עד גוואנאלי. נעליים נוחות.",p:"igidae"},
@@ -419,226 +537,338 @@ var DAYS=[
   {t:"09:00",h:"ארוחת בוקר: מרק דג פוגו",d:"מרק צלול ומרענן — גם תרופה ידועה לאחרי לילה בגוואנאלי.",f:"bokguk"},
   {t:"10:45",h:"צ׳ק-אאוט ושמירת תיק בקבלה",d:"צ׳ק-אאוט עד 11:00."},
   {t:"11:30",h:"Spa Land בשינסגה סנטום סיטי",d:"ג׳ימג׳ילבאנג יוקרתי — מעיינות חמים, סאונות, מקום לנוח. פתרון מעולה ליום האחרון.",p:"spaland"},
-  {t:"15:00",h:"מתנות אחרונות בשינסגה / שוק",d:"קוסמטיקה קוריאנית, חטיפים מסופר ו-Samjin Eomuk לדרך."},
-  {t:"—",h:"חזרה למלון לתיק, ונסיעה לשדה",d:"תכנן לפי שעת הטיסה. לשדה הבינלאומי כדאי להגיע 3 שעות לפני."}]}
+  {t:"15:00",h:"מתנות אחרונות בשינסגה / שוק",d:"קוסמטיקה קוריאנית, חטיפים מסופר ו-Samjin Eomuk לדרך.",f:"eomuk"},
+  {t:"",h:"חזרה למלון לתיק, ונסיעה לשדה",d:"קבע שעה לפי הטיסה. לשדה הבינלאומי כדאי להגיע 3 שעות לפני."}]}
 ];
 
-var PLACES=[
- {id:"haeundae-beach",a:"haeundae",c:"חוף",n:"חוף האונדה",kr:"해운대해수욕장",d:"החוף הכי מפורסם בקוריאה, 1.5 ק״מ של חול. בנובמבר שקט ונעים להליכה.",m:"פתוח תמיד · חינם",tip:"בצד המזרחי (ליד המלון שלך) נמצאת תחנת Mipo של הבלו-ליין."},
- {id:"dongbaek",a:"haeundae",c:"טבע",n:"האי דונגבק ובית Nurimaru",kr:"동백섬",d:"שביל עגול סביב חצי-אי מיוער, גשר תלוי ומגדלור.",m:"פתוח תמיד · חינם · 30–40 דק׳",tip:"התצפית הכי טובה על גשר גוואנאן מהצד הזה של העיר."},
- {id:"bay101",a:"haeundae",c:"לילה",n:"The Bay 101",kr:"더베이101",d:"מרינה ובר על המים, עם השתקפות מגדלי מרין סיטי.",m:"ערב · חינם להסתובב",tip:"פיש אנד צ׳יפס ובירה בחוץ — ויש סיורי סירה בלילה."},
- {id:"xsky",a:"haeundae",c:"תצפית",n:"Busan X the Sky",kr:"부산엑스더스카이",d:"תצפית בקומות 98–100 של מגדל LCT, מהגבוהות בקוריאה.",m:"בערך 10:00–21:00 · כ-₩27,000",tip:"קנה ב-Klook. ערב מוקדם = יום ולילה באותו ביקור."},
- {id:"blueline",a:"haeundae",c:"אטרקציה",n:"Haeundae Blueline Park",kr:"해운대블루라인파크",d:"Sky Capsule זוגית מעל הים או Beach Train על מסילת חוף ישנה, מ-Mipo עד סונגג׳ונג.",m:"Sky Capsule חייב הזמנה מראש",tip:"נסיעה לכיוון אחד בקפסולה, חזרה ברכבת או ברגל לאורך המסילה."},
- {id:"sealife",a:"haeundae",c:"גשם",n:"SEA LIFE Busan Aquarium",kr:"씨라이프 부산아쿠아리움",d:"אקווריום מתחת לחוף האונדה עם מנהרת כרישים.",m:"10:00–19:00 בערך",tip:"תוכנית ב׳ טובה ליום גשום."},
- {id:"cheongsapo",a:"east",c:"תצפית",n:"צ׳ונגסאפו ודאריטדול",kr:"청사포 다릿돌전망대",d:"כפר דייגים קטן וגשר תצפית בצורת אבני מעבר מעל הגלים.",m:"פתוח ביום · חינם",tip:"הצמד מגדלורים אדום-לבן הוא סמל בוסאני."},
- {id:"songjeong",a:"east",c:"חוף",n:"חוף סונגג׳ונג",kr:"송정해수욕장",d:"חוף הגלישה של בוסאן, אווירה צעירה ורגועה.",m:"בתי ספר לגלישה פתוחים כל השנה",tip:"בנובמבר המים בערך 18° — חליפה כלולה בהשכרה."},
- {id:"yonggungsa",a:"east",c:"תרבות",n:"מקדש הדונג יונגגונגסה",kr:"해동용궁사",d:"אחד המקדשים הנדירים בקוריאה שנמצאים על חוף הים.",m:"מוקדם בבוקר עד ערב · חינם",tip:"הגע מוקדם או אחרי 16:00 לפחות עומס."},
- {id:"luge",a:"east",c:"אטרקציה",n:"Skyline Luge Busan",kr:"스카이라인루지 부산",d:"מזחלות עם גלגלים במסלולים מפותלים, רכבל חזרה למעלה.",m:"כרטיס לפי מספר ירידות",tip:"3 ירידות זה המינימום. בערב יש תאורה."},
- {id:"gwangalli",a:"gwangan",c:"לילה",n:"חוף גוואנאלי",kr:"광안리해수욕장",d:"חוף עם נוף לגשר גוואנאן המואר — לב חיי הלילה בבוסאן.",m:"הגשר מואר מהחשכה עד חצות",tip:"מופע הרחפנים מתקיים רק בשבתות — לא בימים שלך."},
- {id:"igidae",a:"gwangan",c:"טבע",n:"שביל החוף איגידה",kr:"이기대해안산책로",d:"שביל צוקים עם גשרים תלויים ונוף לגשר ולמרין סיטי.",m:"2–3 שעות · חינם",tip:"הכי טוב מאוריוקדו לכיוון גוואנאלי — מסיים בחוף."},
- {id:"oryukdo",a:"gwangan",c:"תצפית",n:"Oryukdo Skywalk",kr:"오륙도스카이워크",d:"מרפסת זכוכית בצורת פרסה מעל צוק 35 מטר.",m:"9:00–18:00 בערך · חינם",tip:"עוטים כיסויי נעליים בכניסה."},
- {id:"gamcheon",a:"old",c:"תרבות",n:"כפר התרבות גמצ׳ון",kr:"감천문화마을",d:"שכונת פליטים לשעבר שהפכה לגלריה פתוחה של בתים צבעוניים.",m:"9:00–18:00 · חינם",tip:"מפת חותמות ב-₩2,000 במרכז המבקרים. הנסיך הקטן על המעקה — יש תור לתמונה."},
- {id:"jagalchi",a:"old",c:"אוכל",n:"שוק הדגים ג׳גאלצ׳י",kr:"자갈치시장",d:"שוק הדגים הגדול בקוריאה, על המזח.",m:"בוקר עד ערב",tip:"מחירים פתוחים למיקוח בדוכנים בחוץ."},
- {id:"biff",a:"old",c:"שוק",n:"כיכר BIFF ושוק גוקג׳ה",kr:"BIFF광장 국제시장",d:"רחוב פסטיבל הסרטים עם טביעות ידיים של שחקנים, ומיד לידו שוק ענק.",m:"יום וערב",tip:"סיאט הוטוק בדוכנים — לשים לב שהוא חם מאוד."},
- {id:"tower",a:"old",c:"תצפית",n:"פארק יונגדוסאן ומגדל בוסאן",kr:"용두산공원 부산타워",d:"פארק על גבעה במרכז העיר הישנה ומגדל תצפית.",m:"10:00–22:00 בערך",tip:"הפארק עצמו חינם. המגדל — רק אם השמיים צלולים."},
- {id:"bupyeong",a:"old",c:"שוק",n:"שוק הלילה בופיונג קקנגטונג",kr:"부평깡통시장",d:"השוק הראשון בקוריאה עם שוק לילה קבוע.",m:"שוק הלילה בערך 19:30–00:00",tip:"להגיע רעב ולנסות 4–5 דוכנים שונים."},
- {id:"huinnyeoul",a:"yeongdo",c:"תרבות",n:"כפר הינייאול",kr:"흰여울문화마을",d:"סמטה לבנה על צוקים מעל הים, נקראת \"סנטוריני של קוריאה\".",m:"פתוח ביום · חינם",tip:"מנהרת הבטון בתחתית השביל — תמונה מעולה."},
- {id:"taejongdae",a:"yeongdo",c:"טבע",n:"פארק טאג׳ונגדה",kr:"태종대",d:"צוקים, מגדלור ורכבת פארק סביב הקצה הדרומי של יונגדו.",m:"חצי יום",tip:"חלופה טובה אם נשאר לך כוח ביום 3."},
- {id:"jeonpo",a:"seomyeon",c:"עיר",n:"רחוב הקפה ג׳ונפו",kr:"전포카페거리",d:"סמטאות של בתי קפה מעוצבים, ברים קטנים וחנויות עיצוב.",m:"צהריים–לילה",tip:"סומיון ממש ליד — בערב זה אזור הבילוי הצעיר של העיר."},
- {id:"spaland",a:"seomyeon",c:"גשם",n:"Spa Land Centum City",kr:"스파랜드 센텀시티",d:"ג׳ימג׳ילבאנג יוקרתי עם מעיינות חמים טבעיים, בתוך הקניון הגדול בעולם.",m:"בערך 9:00–20:00 · ~4 שעות לכרטיס",tip:"בחדרי המים — בלי בגדים, לפי מגדר. נחשב נורמלי לגמרי."},
- {id:"cinema",a:"seomyeon",c:"עיר",n:"מרכז הקולנוע של בוסאן",kr:"영화의전당",d:"גג ענק עם תאורת LED, הבית של פסטיבל הסרטים.",m:"תאורה בערב",tip:"5 דקות הליכה מ-Spa Land."}
+/* w = Wikipedia article titles to try for photos, in order ("lang:Title") */
+const PLACES=[
+ {id:"haeundae-beach",a:"haeundae",c:"חוף",n:"חוף האונדה",kr:"해운대해수욕장",w:["en:Haeundae Beach"],d:"החוף הכי מפורסם בקוריאה, 1.5 ק״מ של חול. בנובמבר שקט ונעים להליכה.",m:"פתוח תמיד · חינם",tip:"בצד המזרחי (ליד המלון שלך) נמצאת תחנת Mipo של הבלו-ליין."},
+ {id:"dongbaek",a:"haeundae",c:"טבע",n:"האי דונגבק ובית Nurimaru",kr:"동백섬",w:["en:Dongbaekseom","ko:동백섬 (부산)","en:Nurimaru APEC House"],d:"שביל עגול סביב חצי-אי מיוער, גשר תלוי ומגדלור.",m:"פתוח תמיד · חינם · 30–40 דק׳",tip:"התצפית הכי טובה על גשר גוואנאן מהצד הזה של העיר."},
+ {id:"bay101",a:"haeundae",c:"לילה",n:"The Bay 101",kr:"더베이101",w:["ko:더베이101","en:Marine City, Busan","ko:마린시티"],d:"מרינה ובר על המים, עם השתקפות מגדלי מרין סיטי.",m:"ערב · חינם להסתובב",tip:"פיש אנד צ׳יפס ובירה בחוץ — ויש סיורי סירה בלילה."},
+ {id:"xsky",a:"haeundae",c:"תצפית",n:"Busan X the Sky",kr:"부산엑스더스카이",w:["en:Haeundae LCT The Sharp","ko:해운대 엘시티"],d:"תצפית בקומות 98–100 של מגדל LCT, מהגבוהות בקוריאה.",m:"בערך 10:00–21:00 · כ-₩27,000",tip:"קנה ב-Klook. ערב מוקדם = יום ולילה באותו ביקור."},
+ {id:"blueline",a:"haeundae",c:"אטרקציה",n:"Haeundae Blueline Park",kr:"해운대블루라인파크",w:["ko:해운대블루라인파크","en:Haeundae Blueline Park"],d:"Sky Capsule זוגית מעל הים או Beach Train על מסילת חוף ישנה, מ-Mipo עד סונגג׳ונג.",m:"Sky Capsule חייב הזמנה מראש",tip:"נסיעה לכיוון אחד בקפסולה, חזרה ברכבת או ברגל לאורך המסילה."},
+ {id:"sealife",a:"haeundae",c:"גשם",n:"SEA LIFE Busan Aquarium",kr:"씨라이프 부산아쿠아리움",w:["en:Sea Life Busan Aquarium","ko:씨라이프 부산아쿠아리움"],d:"אקווריום מתחת לחוף האונדה עם מנהרת כרישים.",m:"10:00–19:00 בערך",tip:"תוכנית ב׳ טובה ליום גשום."},
+ {id:"cheongsapo",a:"east",c:"תצפית",n:"צ׳ונגסאפו ודאריטדול",kr:"청사포 다릿돌전망대",w:["ko:청사포","ko:청사포 다릿돌전망대"],d:"כפר דייגים קטן וגשר תצפית בצורת אבני מעבר מעל הגלים.",m:"פתוח ביום · חינם",tip:"הצמד מגדלורים אדום-לבן הוא סמל בוסאני."},
+ {id:"songjeong",a:"east",c:"חוף",n:"חוף סונגג׳ונג",kr:"송정해수욕장",w:["en:Songjeong Beach","ko:송정해수욕장"],d:"חוף הגלישה של בוסאן, אווירה צעירה ורגועה.",m:"בתי ספר לגלישה פתוחים כל השנה",tip:"בנובמבר המים בערך 18° — חליפה כלולה בהשכרה."},
+ {id:"yonggungsa",a:"east",c:"תרבות",n:"מקדש הדונג יונגגונגסה",kr:"해동용궁사",w:["en:Haedong Yonggungsa","ko:해동용궁사"],d:"אחד המקדשים הנדירים בקוריאה שנמצאים על חוף הים.",m:"מוקדם בבוקר עד ערב · חינם",tip:"הגע מוקדם או אחרי 16:00 לפחות עומס."},
+ {id:"luge",a:"east",c:"אטרקציה",n:"Skyline Luge Busan",kr:"스카이라인루지 부산",w:["en:Skyline Enterprises","ko:스카이라인 루지"],d:"מזחלות עם גלגלים במסלולים מפותלים, רכבל חזרה למעלה.",m:"כרטיס לפי מספר ירידות",tip:"3 ירידות זה המינימום. בערב יש תאורה."},
+ {id:"gwangalli",a:"gwangan",c:"לילה",n:"חוף גוואנאלי",kr:"광안리해수욕장",w:["en:Gwangalli Beach","en:Gwangan Bridge"],d:"חוף עם נוף לגשר גוואנאן המואר — לב חיי הלילה בבוסאן.",m:"הגשר מואר מהחשכה עד חצות",tip:"מופע הרחפנים מתקיים רק בשבתות — לא בימים שלך."},
+ {id:"igidae",a:"gwangan",c:"טבע",n:"שביל החוף איגידה",kr:"이기대해안산책로",w:["en:Igidae Park","ko:이기대","ko:이기대공원"],d:"שביל צוקים עם גשרים תלויים ונוף לגשר ולמרין סיטי.",m:"2–3 שעות · חינם",tip:"הכי טוב מאוריוקדו לכיוון גוואנאלי — מסיים בחוף."},
+ {id:"oryukdo",a:"gwangan",c:"תצפית",n:"Oryukdo Skywalk",kr:"오륙도스카이워크",w:["en:Oryukdo","ko:오륙도"],d:"מרפסת זכוכית בצורת פרסה מעל צוק 35 מטר.",m:"9:00–18:00 בערך · חינם",tip:"עוטים כיסויי נעליים בכניסה."},
+ {id:"gamcheon",a:"old",c:"תרבות",n:"כפר התרבות גמצ׳ון",kr:"감천문화마을",w:["en:Gamcheon Culture Village","ko:감천문화마을"],d:"שכונת פליטים לשעבר שהפכה לגלריה פתוחה של בתים צבעוניים.",m:"9:00–18:00 · חינם",tip:"מפת חותמות ב-₩2,000 במרכז המבקרים. הנסיך הקטן על המעקה — יש תור לתמונה."},
+ {id:"jagalchi",a:"old",c:"אוכל",n:"שוק הדגים ג׳גאלצ׳י",kr:"자갈치시장",w:["en:Jagalchi Fish Market","en:Jagalchi Market","ko:자갈치시장"],d:"שוק הדגים הגדול בקוריאה, על המזח.",m:"בוקר עד ערב",tip:"מחירים פתוחים למיקוח בדוכנים בחוץ."},
+ {id:"biff",a:"old",c:"שוק",n:"כיכר BIFF ושוק גוקג׳ה",kr:"BIFF광장 국제시장",w:["en:Gukje Market","ko:국제시장","ko:BIFF 광장"],d:"רחוב פסטיבל הסרטים עם טביעות ידיים של שחקנים, ומיד לידו שוק ענק.",m:"יום וערב",tip:"סיאט הוטוק בדוכנים — לשים לב שהוא חם מאוד."},
+ {id:"tower",a:"old",c:"תצפית",n:"פארק יונגדוסאן ומגדל בוסאן",kr:"용두산공원 부산타워",w:["en:Busan Tower","en:Yongdusan Park","ko:부산타워"],d:"פארק על גבעה במרכז העיר הישנה ומגדל תצפית.",m:"10:00–22:00 בערך",tip:"הפארק עצמו חינם. המגדל — רק אם השמיים צלולים."},
+ {id:"bupyeong",a:"old",c:"שוק",n:"שוק הלילה בופיונג קקנגטונג",kr:"부평깡통시장",w:["ko:부평깡통시장","en:Bupyeong Kkangtong Market","ko:깡통시장"],d:"השוק הראשון בקוריאה עם שוק לילה קבוע.",m:"שוק הלילה בערך 19:30–00:00",tip:"להגיע רעב ולנסות 4–5 דוכנים שונים."},
+ {id:"huinnyeoul",a:"yeongdo",c:"תרבות",n:"כפר הינייאול",kr:"흰여울문화마을",w:["en:Huinnyeoul Culture Village","ko:흰여울문화마을"],d:"סמטה לבנה על צוקים מעל הים, נקראת \"סנטוריני של קוריאה\".",m:"פתוח ביום · חינם",tip:"מנהרת הבטון בתחתית השביל — תמונה מעולה."},
+ {id:"taejongdae",a:"yeongdo",c:"טבע",n:"פארק טאג׳ונגדה",kr:"태종대",w:["en:Taejongdae","ko:태종대"],d:"צוקים, מגדלור ורכבת פארק סביב הקצה הדרומי של יונגדו.",m:"חצי יום",tip:"חלופה טובה אם נשאר לך כוח ביום 3."},
+ {id:"jeonpo",a:"seomyeon",c:"עיר",n:"רחוב הקפה ג׳ונפו",kr:"전포카페거리",w:["ko:전포카페거리","en:Seomyeon","ko:서면 (부산)"],d:"סמטאות של בתי קפה מעוצבים, ברים קטנים וחנויות עיצוב.",m:"צהריים–לילה",tip:"סומיון ממש ליד — בערב זה אזור הבילוי הצעיר של העיר."},
+ {id:"spaland",a:"seomyeon",c:"גשם",n:"Spa Land Centum City",kr:"스파랜드 센텀시티",w:["en:Shinsegae Centum City","ko:신세계 센텀시티","en:Jjimjilbang"],d:"ג׳ימג׳ילבאנג יוקרתי עם מעיינות חמים טבעיים, בתוך הקניון הגדול בעולם.",m:"בערך 9:00–20:00 · ~4 שעות לכרטיס",tip:"בחדרי המים — בלי בגדים, לפי מגדר. נחשב נורמלי לגמרי."},
+ {id:"cinema",a:"seomyeon",c:"עיר",n:"מרכז הקולנוע של בוסאן",kr:"영화의전당",w:["en:Busan Cinema Center","ko:영화의전당"],d:"גג ענק עם תאורת LED, הבית של פסטיבל הסרטים.",m:"תאורה בערב",tip:"5 דקות הליכה מ-Spa Land."}
 ];
 
-var FOOD=[
- {id:"gukbap",c:"מנה",n:"דוואג׳י גוקבאפ",kr:"돼지국밥",p:"₩",d:"מרק עצמות חזיר עם אורז — המנה הכי בוסאנית שיש. מתבלים לבד עם שרימפס מותסס, שום וצ׳ילי.",w:"Ssangdungi Dwaeji Gukbap (Daeyeon) או כל מקום בסמטת הגוקבאפ בסומיון",q:"쌍둥이돼지국밥"},
- {id:"milmyeon",c:"מנה",n:"מילמיון",kr:"밀면",p:"₩",d:"אטריות חיטה קרות במרק בקר קר — הומצאו בבוסאן אחרי מלחמת קוריאה.",w:"Gaya Milmyeon או Choonhachudong Milmyeon בסומיון",q:"가야밀면"},
- {id:"hotteok",c:"רחוב",n:"סיאט הוטוק",kr:"씨앗호떡",p:"₩",d:"פנקייק מטוגן ממולא סוכר חום, ופתוח וממולא זרעים ואגוזים.",w:"דוכנים בכיכר BIFF",q:"BIFF광장 씨앗호떡"},
- {id:"haeundae-market",c:"רחוב",n:"השוק של האונדה",kr:"해운대시장",p:"₩",d:"טטאוקבוקי, סונדה ואומוק, קרוב למלון. Sanggukine הוא הדוכן המפורסם.",w:"Haeundae Traditional Market",q:"해운대전통시장"},
- {id:"eomuk",c:"רחוב",n:"אומוק — עוגות דגים",kr:"어묵",p:"₩",d:"בוסאן היא בירת האומוק. ב-Samjin יש עשרות סוגים, כמו מאפייה.",w:"Samjin Eomuk — סניף ביונגדו או בהאונדה",q:"삼진어묵"},
- {id:"hoe",c:"ים",n:"הווה — דג נא",kr:"회",p:"₩₩",d:"דג חי שנפרס לפניך, עם חסה, שום וגוצ׳וג׳אנג. אחר כך מרק חריף מהשאריות (מאוןטאנג).",w:"ג׳גאלצ׳י או מרכז הדגים במילאק ליד גוואנאלי",q:"민락어민활어직판장"},
- {id:"nakgopsae",c:"מנה",n:"נקגופסה",kr:"낙곱새",p:"₩₩",d:"תבשיל חריף של תמנון קטן, קרביים בקר ושרימפס — מבשלים על השולחן.",w:"Gaemijip — רשת בוסאנית עם סניפים בהאונדה וגוואנאלי",q:"개미집"},
- {id:"bokguk",c:"מנה",n:"בוקגוק — מרק דג פוגו",kr:"복국",p:"₩₩",d:"מרק צלול עם נבטים — ארוחת בוקר קלאסית בהאונדה.",w:"Geumsu Bokguk בהאונדה, פתוח 24 שעות",q:"금수복국 해운대"},
- {id:"gomjangeo",c:"ים",n:"גומג׳נגאו",kr:"곰장어",p:"₩₩",d:"צלופח-דג צלוי על גחלים עם רוטב חריף. למי שמחפש הרפתקה.",w:"מסעדות ליד ג׳גאלצ׳י",q:"자갈치 곰장어"},
- {id:"bibimdangmyeon",c:"רחוב",n:"ביבים דנגמיון",kr:"비빔당면",p:"₩",d:"אטריות זכוכית עם ירקות ורוטב מתוק-חריף — חטיף שוק קלאסי.",w:"שוק גוקג׳ה / בופיונג",q:"국제시장 비빔당면"},
- {id:"chimaek",c:"לילה",n:"צ׳ימק — עוף ובירה",kr:"치맥",p:"₩₩",d:"עוף מטוגן קריספי עם בירה. מזמינים חצי-חצי: רגיל ויאנגניום.",w:"בכל שכונה, ובמיוחד ליד החופים",q:"해운대 치킨"},
- {id:"momos",c:"קפה",n:"Momos Coffee",kr:"모모스커피",p:"₩₩",d:"בית הקלייה של אלוף העולם בבריסטה 2019. הקפה הכי מפורסם בבוסאן.",w:"הסניף הראשי ב-Oncheonjang, או סניף ב-Yeongdo",q:"모모스커피"},
- {id:"cvs",c:"לילה",n:"ארוחת חנות נוחות",kr:"편의점",p:"₩",d:"רמיון חם במכונה, קימבאפ משולש וסוג׳ו ב-₩2,000. חוויה קוריאנית אמיתית.",w:"GS25 / CU / 7-Eleven — בכל פינה",q:"GS25"}
+const FOOD=[
+ {id:"gukbap",c:"מנה",n:"דוואג׳י גוקבאפ",kr:"돼지국밥",p:"₩",w:["en:Dwaeji-gukbap","en:Dwaeji gukbap","ko:돼지국밥"],d:"מרק עצמות חזיר עם אורז — המנה הכי בוסאנית שיש. מתבלים לבד עם שרימפס מותסס, שום וצ׳ילי.",where:"Ssangdungi Dwaeji Gukbap (Daeyeon) או כל מקום בסמטת הגוקבאפ בסומיון",q:"쌍둥이돼지국밥"},
+ {id:"milmyeon",c:"מנה",n:"מילמיון",kr:"밀면",p:"₩",w:["en:Milmyeon","ko:밀면"],d:"אטריות חיטה קרות במרק בקר קר — הומצאו בבוסאן אחרי מלחמת קוריאה.",where:"Gaya Milmyeon או Choonhachudong Milmyeon בסומיון",q:"가야밀면"},
+ {id:"hotteok",c:"רחוב",n:"סיאט הוטוק",kr:"씨앗호떡",p:"₩",w:["en:Hotteok","ko:호떡"],d:"פנקייק מטוגן ממולא סוכר חום, ופתוח וממולא זרעים ואגוזים.",where:"דוכנים בכיכר BIFF",q:"BIFF광장 씨앗호떡"},
+ {id:"haeundae-market",c:"רחוב",n:"טטאוקבוקי בשוק האונדה",kr:"떡볶이",p:"₩",w:["en:Tteok-bokki","ko:떡볶이"],d:"טטאוקבוקי, סונדה ואומוק, קרוב למלון. Sanggukine הוא הדוכן המפורסם.",where:"Haeundae Traditional Market",q:"해운대전통시장"},
+ {id:"eomuk",c:"רחוב",n:"אומוק — עוגות דגים",kr:"어묵",p:"₩",w:["en:Eomuk","ko:어묵"],d:"בוסאן היא בירת האומוק. ב-Samjin יש עשרות סוגים, כמו מאפייה.",where:"Samjin Eomuk — סניף ביונגדו או בהאונדה",q:"삼진어묵"},
+ {id:"hoe",c:"ים",n:"הווה — דג נא",kr:"회",p:"₩₩",w:["en:Hoe (food)","ko:회 (음식)"],d:"דג חי שנפרס לפניך, עם חסה, שום וגוצ׳וג׳אנג. אחר כך מרק חריף מהשאריות (מאוןטאנג).",where:"ג׳גאלצ׳י או מרכז הדגים במילאק ליד גוואנאלי",q:"민락어민활어직판장"},
+ {id:"nakgopsae",c:"מנה",n:"נקגופסה",kr:"낙곱새",p:"₩₩",w:["ko:낙곱새","en:Nakji-bokkeum","ko:낙지볶음"],d:"תבשיל חריף של תמנון קטן, קרביים בקר ושרימפס — מבשלים על השולחן.",where:"Gaemijip — רשת בוסאנית עם סניפים בהאונדה וגוואנאלי",q:"개미집"},
+ {id:"bokguk",c:"מנה",n:"בוקגוק — מרק דג פוגו",kr:"복국",p:"₩₩",w:["ko:복국","en:Fugu"],d:"מרק צלול עם נבטים — ארוחת בוקר קלאסית בהאונדה.",where:"Geumsu Bokguk בהאונדה, פתוח 24 שעות",q:"금수복국 해운대"},
+ {id:"gomjangeo",c:"ים",n:"גומג׳נגאו",kr:"곰장어",p:"₩₩",w:["ko:곰장어구이","ko:먹장어","en:Hagfish"],d:"צלופח-דג צלוי על גחלים עם רוטב חריף. למי שמחפש הרפתקה.",where:"מסעדות ליד ג׳גאלצ׳י",q:"자갈치 곰장어"},
+ {id:"bibimdangmyeon",c:"רחוב",n:"ביבים דנגמיון",kr:"비빔당면",p:"₩",w:["ko:비빔당면","en:Dangmyeon"],d:"אטריות זכוכית עם ירקות ורוטב מתוק-חריף — חטיף שוק קלאסי.",where:"שוק גוקג׳ה / בופיונג",q:"국제시장 비빔당면"},
+ {id:"chimaek",c:"לילה",n:"צ׳ימק — עוף ובירה",kr:"치맥",p:"₩₩",w:["en:Chimaek","en:Korean fried chicken"],d:"עוף מטוגן קריספי עם בירה. מזמינים חצי-חצי: רגיל ויאנגניום.",where:"בכל שכונה, ובמיוחד ליד החופים",q:"해운대 치킨"},
+ {id:"momos",c:"קפה",n:"Momos Coffee",kr:"모모스커피",p:"₩₩",w:["ko:모모스커피","en:Coffee in South Korea"],d:"בית הקלייה של אלוף העולם בבריסטה 2019. הקפה הכי מפורסם בבוסאן.",where:"הסניף הראשי ב-Oncheonjang, או סניף ב-Yeongdo",q:"모모스커피"},
+ {id:"cvs",c:"לילה",n:"ארוחת חנות נוחות",kr:"편의점",p:"₩",w:["en:Samgak-gimbap","en:Gimbap","ko:편의점"],d:"רמיון חם במכונה, קימבאפ משולש וסוג׳ו ב-₩2,000. חוויה קוריאנית אמיתית.",where:"GS25 / CU / 7-Eleven — בכל פינה",q:"GS25"}
 ];
 
-var PHRASES=[
- ["שלום","안녕하세요","אַן-ניוֹנג-הָה-סֶה-יוֹ"],
- ["תודה","감사합니다","קָאם-סָה-הָאם-נִי-דָה"],
- ["סליחה (לקרוא למלצר)","저기요","צ׳וֹ-גִי-יוֹ"],
- ["כמה זה עולה?","얼마예요?","אוֹל-מָה-יֶה-יוֹ"],
- ["את זה בבקשה","이거 주세요","אִי-גוֹ ג׳וּ-סֶה-יוֹ"],
- ["אדם אחד","한 명이요","הָאן מְיוֹנְג-אִי-יוֹ"],
- ["לא חריף בבקשה","안 맵게 해주세요","אָן מֶפְּ-קֶה הֶה-ג׳וּ-סֶה-יוֹ"],
- ["חשבון בבקשה","계산해 주세요","קֶה-סָאן-הֶה ג׳וּ-סֶה-יוֹ"],
- ["אפשר בכרטיס?","카드 돼요?","קָה-דוּ דְוֶה-יוֹ"],
- ["איפה השירותים?","화장실 어디예요?","הְוָה-ג׳ָאנְג-שִׁיל אוֹ-דִי-יֶה-יוֹ"],
- ["טעים!","맛있어요","מָה-שִׁי-סוֹ-יוֹ"],
- ["לחיים","건배","קוֹן-בֶּה"]
+const PHRASES=[
+ ["שלום","안녕하세요","אַן-ניוֹנג-הָה-סֶה-יוֹ"],["תודה","감사합니다","קָאם-סָה-הָאם-נִי-דָה"],
+ ["סליחה (לקרוא למלצר)","저기요","צ׳וֹ-גִי-יוֹ"],["כמה זה עולה?","얼마예요?","אוֹל-מָה-יֶה-יוֹ"],
+ ["את זה בבקשה","이거 주세요","אִי-גוֹ ג׳וּ-סֶה-יוֹ"],["אדם אחד","한 명이요","הָאן מְיוֹנְג-אִי-יוֹ"],
+ ["לא חריף בבקשה","안 맵게 해주세요","אָן מֶפְּ-קֶה הֶה-ג׳וּ-סֶה-יוֹ"],["חשבון בבקשה","계산해 주세요","קֶה-סָאן-הֶה ג׳וּ-סֶה-יוֹ"],
+ ["אפשר בכרטיס?","카드 돼요?","קָה-דוּ דְוֶה-יוֹ"],["איפה השירותים?","화장실 어디예요?","הְוָה-ג׳ָאנְג-שִׁיל אוֹ-דִי-יֶה-יוֹ"],
+ ["טעים!","맛있어요","מָה-שִׁי-סוֹ-יוֹ"],["לחיים","건배","קוֹן-בֶּה"]
 ];
-
-var TIPS=[
+const TIPS=[
  "Sky Capsule של הבלו-ליין נגמר מהר — הזמן מראש באתר או ב-Klook.",
  "טען T-money ב-₩20,000 בחנות נוחות — יספיק לכמה ימים של מטרו ואוטובוסים.",
  "גמצ׳ון מלא קבוצות אחרי 11:00. מי שמגיע ב-9 מקבל את הסמטאות כמעט לבד.",
  "ב-Spa Land אפשר להעביר כמה שעות טובות אחרי הצ׳ק-אאוט. יש לוקרים לתיק קטן.",
  "Papago מתרגם תפריטים מצילום — שימושי במסעדות בלי תמונות.",
- "המטרו נסגר בסביבות חצות. לגוואנאלי בלילה, תכנן מונית חזרה (Kakao T)."
+ "המטרו נסגר בסביבות חצות. לגוואנאלי בלילה, תכנן מונית חזרה (Kakao T).",
+ "התוכנית גמישה: ויתרת על משהו? סמן ✗ והוסף במקומו מקום מהלשונית מקומות."
 ];
-
-var TODO=[
- "eSIM / סים עם נתונים פעיל","להוריד Naver Map, Papago, Kakao T","לקנות ולטעון T-money",
+const TODO=["eSIM / סים עם נתונים פעיל","להוריד Naver Map, Papago, Kakao T","לקנות ולטעון T-money",
  "להזמין Sky Capsule ליום 3.11","לקנות כרטיס X the Sky / Luge ב-Klook","מתאם חשמל",
- "צילום של הדרכון בטלפון","מספר ביטוח הנסיעות שמור","למשוך קצת מזומן לשווקים","לבדוק שעת טיסה חזרה ב-6.11"
-];
+ "צילום של הדרכון בטלפון","מספר ביטוח הנסיעות שמור","למשוך קצת מזומן לשווקים","לבדוק שעת טיסה חזרה ב-6.11"];
 
-/* ---------- KST clock + trip day ---------- */
-function kstNow(){var d=new Date();return new Date(d.getTime()+d.getTimezoneOffset()*60000+9*3600000)}
-function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-var HE_DOW=["א׳","ב׳","ג׳","ד׳","ה׳","ו׳","ש׳"];
-function tick(){var k=kstNow();$("#kst").textContent=String(k.getHours()).padStart(2,"0")+":"+String(k.getMinutes()).padStart(2,"0");
-  $("#kst-d").textContent="יום "+HE_DOW[k.getDay()]+" "+k.getDate()+"."+(k.getMonth()+1)}
-function todayIndex(){var t=ymd(kstNow());for(var i=0;i<DAYS.length;i++)if(DAYS[i].date===t)return i;
-  return t<DAYS[0].date?-1:99}
+const byKey=k=>{const [t,id]=k.split(":");return (t==="place"?PLACES:FOOD).find(x=>x.id===id)||null};
 
-/* ---------- plan checks ---------- */
-var done=S.get("done",{});
-function key(di,ii){return di+"-"+ii}
-function placeName(id){for(var i=0;i<PLACES.length;i++)if(PLACES[i].id===id)return PLACES[i];return null}
-function foodBy(id){for(var i=0;i<FOOD.length;i++)if(FOOD[i].id===id)return FOOD[i];return null}
+/* ---------- editable plan ---------- */
+function defaultPlan(){return DAYS.map((d,di)=>d.items.map((it,ii)=>({id:"d"+di+"i"+ii,t:it.t,h:it.h,d:it.d,p:it.p||null,f:it.f||null})))}
+let plan=S.get("plan",null);
+if(!Array.isArray(plan)||plan.length!==DAYS.length)plan=defaultPlan();
+let status=S.get("status",null);
+if(!status){status={};const old=S.get("done",{});Object.keys(old).forEach(k=>{if(old[k]){const [a,b]=k.split("-");status["d"+a+"i"+b]="done"}})}
+const tkey=t=>t||"99:99";
+function sortDay(di){plan[di].sort((a,b)=>tkey(a.t).localeCompare(tkey(b.t)))}
+plan.forEach((_,i)=>sortDay(i));
+function savePlan(){S.set("plan",plan)}
+function saveStatus(){S.set("status",status)}
+function findItem(id){for(let di=0;di<plan.length;di++){const ii=plan[di].findIndex(x=>x.id===id);if(ii>=0)return {di,ii,it:plan[di][ii]}}return null}
+function counts(di){let ok=0,no=0;plan[di].forEach(it=>{if(status[it.id]==="done")ok++;else if(status[it.id]==="skip")no++});return {ok,no,n:plan[di].length}}
 
-function timelineHTML(di){
-  var day=DAYS[di];
-  return '<ol class="tl">'+day.items.map(function(it,ii){
-    var k=key(di,ii),p=it.p&&placeName(it.p),f=it.f&&foodBy(it.f),links="";
-    if(p)links+='<a class="btn sm" target="_blank" rel="noopener" href="'+naver(p.kr)+'">מפה</a>';
-    if(f)links+='<a class="btn sm" href="#food" data-goto-food="'+f.id+'">🍜 '+esc(f.n)+'</a>';
-    return '<li class="'+(done[k]?"done":"")+'"><span class="t num">'+it.t+'</span>'+
-      '<span class="dot"><input type="checkbox" id="c'+k+'" data-k="'+k+'" '+(done[k]?"checked":"")+' aria-label="סמן כבוצע: '+esc(it.h)+'"></span>'+
-      '<div class="body"><b>'+esc(it.h)+'</b><p>'+esc(it.d)+'</p>'+(links?'<div class="row">'+links+'</div>':"")+'</div></li>';
-  }).join("")+'</ol>';
+/* ---------- KST clock ---------- */
+function kstNow(){const d=new Date();return new Date(d.getTime()+d.getTimezoneOffset()*60000+9*3600000)}
+const pad2=n=>String(n).padStart(2,"0");
+const ymd=d=>d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());
+const hm=d=>pad2(d.getHours())+":"+pad2(d.getMinutes());
+const HE_DOW=["א׳","ב׳","ג׳","ד׳","ה׳","ו׳","ש׳"];
+function tick(){const k=kstNow();$("#kst").textContent=hm(k);$("#kst-d").textContent="יום "+HE_DOW[k.getDay()]+" "+k.getDate()+"."+(k.getMonth()+1)}
+function todayIndex(){const t=ymd(kstNow());const i=DAYS.findIndex(d=>d.date===t);return i>=0?i:(t<DAYS[0].date?-1:99)}
+const dayLabel=di=>"יום "+(di+1)+" · "+DAYS[di].dow+" "+(+DAYS[di].date.slice(8))+".11";
+
+/* ---------- photos from Wikipedia (loaded live on the phone) ---------- */
+const imgCache=S.get("img2",{});const pending={};
+function sized(u,w){return /\/thumb\//.test(u)?u.replace(/\/\d+px-/,"/"+w+"px-"):u}
+function resolveImg(key){
+  if(imgCache[key])return Promise.resolve(imgCache[key]);
+  if(pending[key])return pending[key];
+  const ref=byKey(key);if(!ref)return Promise.resolve(null);
+  const titles=(ref.w||[]).concat(["ko:"+ref.kr.split(" ")[0]]);
+  pending[key]=(async()=>{
+    for(const w of titles){
+      const i=w.indexOf(":"),lang=w.slice(0,i),title=w.slice(i+1);
+      try{
+        const r=await fetch("https://"+lang+".wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(title.replace(/ /g,"_")));
+        if(!r.ok)continue;const j=await r.json();
+        if(j&&j.thumbnail&&j.thumbnail.source){
+          const v={t:j.thumbnail.source,o:(j.originalimage||j.thumbnail).source,lang,title:j.titles&&j.titles.canonical||j.title,u:j.content_urls&&j.content_urls.mobile&&j.content_urls.mobile.page||""};
+          imgCache[key]=v;S.set("img2",imgCache);return v}
+      }catch(e){}
+    }
+    delete pending[key];return null;
+  })();
+  return pending[key];
 }
-function progress(di){var n=DAYS[di].items.length,c=0;for(var i=0;i<n;i++)if(done[key(di,i)])c++;return c+"/"+n}
+function phInner(ref,label){return '<span class="kr">'+esc(ref.kr.split(" ")[0])+'</span>'+(label?'<span class="cam">'+label+'</span>':"")}
+function phHTML(key,cls,label,attrs){const ref=byKey(key);if(!ref)return "";
+  return '<button type="button" class="ph '+(cls||"")+'" data-img="'+key+'" data-lb="'+key+'" aria-label="תמונות: '+esc(ref.n)+'" '+(attrs||"")+'>'+phInner(ref,label)+'</button>'}
+function paint(el,v,w){if(!v||el.querySelector("img"))return;const img=new Image();img.alt="";img.decoding="async";
+  img.onload=()=>img.classList.add("on");img.onerror=()=>{if(img.src!==v.t)img.src=v.t};img.src=sized(v.t,w);el.appendChild(img)}
+const io="IntersectionObserver" in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);hydrateOne(e.target)}}),{rootMargin:"300px"}):null;
+function hydrateOne(el){const key=el.getAttribute("data-img");const w=el.offsetWidth>200?500:250;resolveImg(key).then(v=>paint(el,v,w))}
+function hydrate(root){$$("[data-img]",root).forEach(el=>{if(el._h)return;el._h=1;if(io)io.observe(el);else hydrateOne(el)})}
 
-document.addEventListener("change",function(e){
-  var k=e.target.getAttribute("data-k");
-  if(k){done[k]=e.target.checked;S.set("done",done);e.target.closest("li").classList.toggle("done",e.target.checked);
-    $$(".prog").forEach(function(el){el.textContent=progress(+el.getAttribute("data-d"))});}
-  var s=e.target.getAttribute("data-store");
-  if(s){S.set("chk:"+s,e.target.checked)}
+/* ---------- lightbox ---------- */
+let lbToken=0;
+function fig(src,cap){return '<figure><img src="'+esc(src)+'" alt="'+esc(cap||"")+'" loading="lazy">'+(cap?'<figcaption>'+esc(cap)+'</figcaption>':"")+'</figure>'}
+async function openLB(key){
+  const ref=byKey(key);if(!ref)return;const tok=++lbToken;
+  const isFood=key.startsWith("food:");
+  $("#lb-title").textContent=ref.n;$("#lb-kr").textContent=ref.kr;
+  $("#lb-body").innerHTML='<p>'+esc(ref.d)+'</p>'+(isFood?'<div class="meta"><span><b>איפה:</b> '+esc(ref.where)+'</span><span><b>מחיר:</b> '+ref.p+'</span></div>'
+      :'<div class="meta"><span><b>'+AREAS[ref.a]+'</b></span><span>'+esc(ref.m)+'</span></div><p class="tip">'+esc(ref.tip)+'</p>');
+  $("#lb-acts").innerHTML='<a class="btn primary" target="_blank" rel="noopener" href="'+naver(isFood?ref.q:ref.kr)+'">פתח במפה</a>'+
+    '<button class="btn" type="button" data-add="'+key+'">+ הוסף למסלול</button>'+
+    '<a class="btn" target="_blank" rel="noopener" href="'+gimg(ref.kr+(isFood?"":" 부산"))+'">עוד תמונות בגוגל</a>';
+  $("#lb-gal").innerHTML='<figure class="ph">'+phInner(ref)+'</figure>';
+  $("#lb-count").textContent="טוען תמונות…";$("#lb-credit").innerHTML="";
+  $("#lb").hidden=false;document.body.classList.add("locked");$("#lb").scrollTop=0;$("#lb-close").focus();
+  const v=await resolveImg(key);if(tok!==lbToken)return;
+  if(!v){$("#lb-count").textContent="לא מצאתי תמונה — נסה \"עוד תמונות בגוגל\"";return}
+  $("#lb-gal").innerHTML=fig(sized(v.o,960),"");
+  $("#lb-credit").innerHTML='תמונות: <a target="_blank" rel="noopener" href="'+esc(v.u)+'">ויקיפדיה</a>';
+  $("#lb-count").textContent="תמונה 1";
+  try{
+    const r=await fetch("https://"+v.lang+".wikipedia.org/api/rest_v1/page/media-list/"+encodeURIComponent(v.title));
+    if(!r.ok||tok!==lbToken)return;const j=await r.json();
+    const pics=(j.items||[]).filter(x=>x.type==="image"&&x.srcset&&x.srcset.length&&!/\.(svg|gif)/i.test(x.title||"")&&!/(logo|flag|map|icon|seal|emblem|location)/i.test(x.title||""))
+      .slice(0,12).map(x=>{let s=x.srcset[x.srcset.length-1].src;if(s.startsWith("//"))s="https:"+s;return {s,c:x.caption&&x.caption.text||""}});
+    if(pics.length>1&&tok===lbToken){$("#lb-gal").innerHTML=pics.map(p=>fig(p.s,p.c)).join("");updCount();
+      $$("#lb-gal img").forEach(im=>im.addEventListener("error",()=>{im.closest("figure").remove();updCount()}))}
+  }catch(e){}
+}
+function updCount(){const g=$("#lb-gal"),n=g.children.length;if(n<2){if(n===1)$("#lb-count").textContent="תמונה 1";return}const i=Math.round(Math.abs(g.scrollLeft)/g.clientWidth)+1;$("#lb-count").textContent="תמונה "+Math.min(i,n)+" מתוך "+n+" · החלק לצד"}
+$("#lb-gal").addEventListener("scroll",()=>{clearTimeout(updCount._t);updCount._t=setTimeout(updCount,60)});
+function closeLB(){$("#lb").hidden=true;lbToken++;if($("#sheet").hidden)document.body.classList.remove("locked")}
+$("#lb-close").addEventListener("click",closeLB);
+
+/* ---------- add sheet ---------- */
+let sheetRef=null;
+function openSheet(opts){
+  opts=opts||{};sheetRef=opts.key||null;const ref=sheetRef&&byKey(sheetRef);
+  const ti=todayIndex();const di=opts.di!=null?opts.di:(ti>=0&&ti<DAYS.length?ti:0);
+  $("#a-day").innerHTML=DAYS.map((d,i)=>'<option value="'+i+'"'+(i===di?" selected":"")+'>'+dayLabel(i)+' — '+esc(d.title)+'</option>').join("");
+  $("#a-title").value=ref?ref.n:"";$("#a-note").value="";
+  const k=kstNow();$("#a-time").value=di===ti?pad2(Math.min(23,k.getHours()+1))+":00":"12:00";
+  $("#sheet-h").textContent=ref?"הוספה למסלול: "+ref.n:"פעילות חדשה";
+  $("#sheet").hidden=false;document.body.classList.add("locked");setTimeout(()=>$(ref?"#a-time":"#a-title").focus(),50);
+}
+function closeSheet(){$("#sheet").hidden=true;if($("#lb").hidden)document.body.classList.remove("locked")}
+$("#sheet-close").addEventListener("click",closeSheet);
+$("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet")closeSheet()});
+$("#sheet-form").addEventListener("submit",e=>{e.preventDefault();
+  const h=$("#a-title").value.trim();if(!h)return;const di=+$("#a-day").value;
+  const it={id:"c"+Date.now().toString(36),t:$("#a-time").value||"",h,d:$("#a-note").value.trim(),p:null,f:null};
+  if(sheetRef){const [t,id]=sheetRef.split(":");if(t==="place")it.p=id;else it.f=id}
+  plan[di].push(it);sortDay(di);savePlan();closeSheet();closeLB();
+  selDay=di;S.set("selDay",di);toast("נוסף ל"+dayLabel(di)+" ב-"+(it.t||"—"));renderCurrent();
+});
+
+/* ---------- timeline ---------- */
+function itemHTML(di,it){
+  const st=status[it.id]||"",pk=it.p?"place:"+it.p:null,fk=it.f?"food:"+it.f:null,thumbKey=pk||fk;
+  const food=fk&&byKey(fk),place=pk&&byKey(pk);
+  let links="";
+  if(place)links+='<a class="btn sm" target="_blank" rel="noopener" href="'+naver(place.kr)+'">מפה</a>';
+  if(food)links+='<button class="btn sm" type="button" data-lb="'+fk+'">🍜 '+esc(food.n)+'</button>';
+  return '<li class="'+(st?"st-"+st:"")+'" data-id="'+it.id+'" data-di="'+di+'">'+
+    '<button class="time num" type="button" data-act="edit" aria-label="שנה שעה: '+esc(it.h)+'">'+(it.t||"—")+'</button>'+
+    '<span class="dot"><i aria-hidden="true">'+(st==="done"?"✓":st==="skip"?"✕":"")+'</i></span>'+
+    '<div class="body"><div class="ib"><div><b>'+esc(it.h)+'</b>'+(it.d?'<p>'+esc(it.d)+'</p>':"")+'</div>'+(thumbKey?phHTML(thumbKey,"th"):"")+'</div>'+
+    '<div class="row acts">'+
+      '<button class="st ok" type="button" data-st="done" aria-pressed="'+(st==="done")+'"><span>✓ עשיתי</span></button>'+
+      '<button class="st no" type="button" data-st="skip" aria-pressed="'+(st==="skip")+'"><span>✕ ויתרתי</span></button>'+
+      links+'<button class="ed-btn" type="button" data-act="edit">שינוי</button></div>'+
+    '<div class="edit" hidden>'+
+      '<div class="field"><label for="t-'+it.id+'">שעה</label><input type="time" id="t-'+it.id+'" value="'+(it.t||"")+'"></div>'+
+      '<div class="field"><label for="dd-'+it.id+'">יום</label><select id="dd-'+it.id+'">'+DAYS.map((d,i)=>'<option value="'+i+'"'+(i===di?" selected":"")+'>'+dayLabel(i)+'</option>').join("")+'</select></div>'+
+      '<div class="row"><button class="btn sm primary" type="button" data-act="save">שמור</button><button class="btn sm" type="button" data-act="cancel">ביטול</button><button class="btn sm" type="button" data-act="del" style="color:var(--no);margin-inline-start:auto">מחק</button></div>'+
+    '</div></div></li>';
+}
+function progHTML(di){const c=counts(di);return '<span class="prog num"><span class="p-ok">✓ '+c.ok+'</span><span class="p-no">✕ '+c.no+'</span><span class="p-all">מתוך '+c.n+'</span></span>'}
+function barHTML(di){const c=counts(di),n=c.n||1;return '<div class="bar" aria-hidden="true"><i class="b-ok" style="width:'+(c.ok/n*100)+'%"></i><i class="b-no" style="width:'+(c.no/n*100)+'%"></i></div>'}
+function timelineHTML(di){return plan[di].length?'<ol class="tl">'+plan[di].map(it=>itemHTML(di,it)).join("")+'</ol>':'<p class="note">היום הזה ריק — יום ספונטני! הוסף משהו או לך לאן שבא לך.</p>'}
+
+document.addEventListener("click",e=>{
+  const lb=e.target.closest("[data-lb]");if(lb){e.preventDefault();openLB(lb.getAttribute("data-lb"));return}
+  const add=e.target.closest("[data-add]");if(add){const k=add.getAttribute("data-add");if(k==="new")openSheet({di:+add.getAttribute("data-di")});else openSheet({key:k});return}
+  const li=e.target.closest("li[data-id]");
+  if(li){
+    const id=li.getAttribute("data-id");
+    const stb=e.target.closest("[data-st]");
+    if(stb){const v=stb.getAttribute("data-st");if(status[id]===v)delete status[id];else status[id]=v;saveStatus();renderCurrent();return}
+    const act=e.target.closest("[data-act]");if(!act)return;const a=act.getAttribute("data-act"),ed=$(".edit",li);
+    if(a==="edit"){ed.hidden=!ed.hidden;if(!ed.hidden)$("input",ed).focus();return}
+    if(a==="cancel"){ed.hidden=true;return}
+    if(a==="del"){if(act.dataset.sure){const f=findItem(id);plan[f.di].splice(f.ii,1);delete status[id];savePlan();saveStatus();toast("נמחק");renderCurrent()}
+      else{act.dataset.sure=1;act.textContent="בטוח? לחץ שוב"}return}
+    if(a==="save"){const f=findItem(id);const t=$("#t-"+id).value,nd=+$("#dd-"+id).value;f.it.t=t;
+      if(nd!==f.di){plan[f.di].splice(f.ii,1);plan[nd].push(f.it)}sortDay(nd);savePlan();
+      toast(nd!==f.di?"הועבר ל"+dayLabel(nd):"השעה עודכנה ל-"+(t||"—"));renderCurrent();return}
+  }
+  const reset=e.target.closest("[data-act=reset]");
+  if(reset){if(reset.dataset.sure){plan=defaultPlan();S.del("plan");toast("המסלול חזר למקור");renderCurrent()}else{reset.dataset.sure=1;reset.textContent="בטוח? לחץ שוב לאיפוס"}}
 });
 
 /* ---------- today ---------- */
 function renderToday(){
-  var ti=todayIndex(),hero=$("#hero");
-  var di=ti<0?0:ti>=DAYS.length?DAYS.length-1:ti;
-  if(ti<0){
-    var diff=Math.ceil((new Date(DAYS[0].date+"T00:00:00")-new Date(ymd(kstNow())+"T00:00:00"))/864e5);
-    hero.innerHTML='<div class="eyebrow" style="color:inherit;opacity:.8">עוד מעט</div><div class="big">עוד '+diff+' ימים לבוסאן</div><p>הנה היום הראשון כדי שתתכונן.</p>';
-  }else if(ti>=DAYS.length){
-    hero.innerHTML='<div class="big">הטיול הסתיים</div><p>מקווים שהיה מדהים, רועי. 감사합니다 בוסאן!</p>';
-  }else{
-    var d=DAYS[ti];
-    hero.innerHTML='<div class="eyebrow" style="color:inherit;opacity:.8">יום '+(ti+1)+' מתוך '+DAYS.length+' · '+d.dow+' '+d.date.slice(8).replace(/^0/,"")+'.11</div>'+
-      '<div class="big">'+esc(d.title)+'</div><p>'+(ti===0?"ברוך הבא לבוסאן, רועי! הצ׳ק-אין מ-15:00.":"בוקר טוב רועי. היום מתמקדים ב"+esc(d.area)+".")+'</p>'+
-      '<div class="row"><span class="chip">'+esc(d.area)+'</span><span class="chip kr">'+d.kr+'</span><span class="chip num">בוצעו <span class="prog" data-d="'+ti+'">'+progress(ti)+'</span></span></div>';
-  }
-  $("#today-plan").innerHTML='<div class="row" style="justify-content:space-between;margin-bottom:12px"><h3>התוכנית '+(ti>=0&&ti<DAYS.length?"להיום":"ליום "+(di+1))+'</h3><a href="#plan" class="note">לכל הימים ←</a></div>'+timelineHTML(di);
-  var dayOfYear=Math.floor(kstNow()/864e5);
-  $("#tip").textContent=TIPS[dayOfYear%TIPS.length];
+  const ti=todayIndex(),hero=$("#hero");const di=ti<0?0:ti>=DAYS.length?DAYS.length-1:ti;const d=DAYS[di];
+  const now=hm(kstNow());
+  const next=ti===di?plan[di].find(it=>!status[it.id]&&it.t&&it.t>=now)||plan[di].find(it=>!status[it.id]):plan[di][0];
+  const firstP=plan[di].find(it=>it.p);
+  const heroKey=(next&&(next.p?"place:"+next.p:next.f?"food:"+next.f:null))||(firstP?"place:"+firstP.p:"place:haeundae-beach");
+  let top;
+  if(ti<0){const diff=Math.ceil((new Date(DAYS[0].date+"T00:00:00")-new Date(ymd(kstNow())+"T00:00:00"))/864e5);
+    top='<div class="eyebrow">עוד מעט</div><div class="big">עוד '+diff+' ימים לבוסאן</div><p>הנה היום הראשון כדי שתתכונן.</p>'}
+  else if(ti>=DAYS.length){top='<div class="big">הטיול הסתיים</div><p>מקווים שהיה מדהים, רועי. 감사합니다 בוסאן!</p>'}
+  else{top='<div class="eyebrow">'+dayLabel(ti)+' מתוך '+DAYS.length+'</div><div class="big">'+esc(d.title)+'</div><p>'+(ti===0?"ברוך הבא לבוסאן, רועי! הצ׳ק-אין מ-15:00.":"בוקר טוב רועי. היום מתמקדים ב"+esc(d.area)+".")+'</p>'+
+    '<div class="row"><span class="chip">'+esc(d.area)+'</span><span class="chip kr">'+d.kr+'</span></div>'}
+  hero.innerHTML='<div class="bg"></div>'+top;
+  resolveImg(heroKey).then(v=>{if(!v)return;const bg=$(".bg",hero);if(!bg)return;const im=new Image();im.onload=()=>{bg.style.backgroundImage="url('"+im.src+"')";bg.classList.add("on")};im.src=sized(v.t,960)});
+  const nc=$("#next-card");
+  if(next&&ti>=0&&ti<DAYS.length){const nk=next.p?"place:"+next.p:next.f?"food:"+next.f:null;
+    nc.hidden=false;nc.innerHTML='<div class="next">'+(nk?phHTML(nk,""):'<div class="ph" style="width:88px;height:88px;border-radius:12px;cursor:default"><span class="kr">다음</span></div>')+
+      '<div style="min-width:0"><div class="eyebrow">הבא בתור · <span class="num">'+(next.t||"—")+'</span></div><h3>'+esc(next.h)+'</h3>'+
+      '<div class="row" style="margin-top:6px"><a class="btn sm" href="#plan">שנה תוכנית</a>'+(next.p?'<a class="btn sm primary" target="_blank" rel="noopener" href="'+naver(byKey("place:"+next.p).kr)+'">נווט</a>':"")+'</div></div></div>'}
+  else nc.hidden=true;
+  $("#today-plan").innerHTML='<div class="row" style="justify-content:space-between"><h3>'+(ti>=0&&ti<DAYS.length?"התוכנית להיום":"התוכנית ליום "+(di+1))+'</h3>'+progHTML(di)+'</div>'+barHTML(di)+timelineHTML(di)+
+    '<div class="tl-foot"><button class="btn sm ghost" type="button" data-add="new" data-di="'+di+'">+ הוסף פעילות</button><a href="#places" class="btn sm">רעיונות ←</a></div>';
+  $("#tip").textContent=TIPS[Math.floor(kstNow()/864e5)%TIPS.length];
 }
 
 /* ---------- plan view ---------- */
-var selDay=S.get("selDay",null);
+let selDay=S.get("selDay",null);
 function renderPlan(){
-  var ti=todayIndex();
-  if(selDay===null)selDay=ti>=0&&ti<DAYS.length?ti:0;
-  $("#days").innerHTML=DAYS.map(function(d,i){return '<button type="button" class="day-btn'+(i===ti?" is-today":"")+'" aria-pressed="'+(i===selDay)+'" data-day="'+i+'"><span>'+d.dow+'</span><b class="num">'+(+d.date.slice(8))+'</b><span>'+(i===ti?"היום":"נוב׳")+'</span></button>'}).join("");
-  var d=DAYS[selDay];
-  $("#day-detail").innerHTML='<div class="eyebrow">יום '+(selDay+1)+' · '+esc(d.area)+'</div><div class="row" style="justify-content:space-between;margin:2px 0 14px"><h3 style="font-family:var(--f-display);font-size:1.9rem;font-weight:700;line-height:1">'+esc(d.title)+'</h3><span class="chip num">בוצעו <span class="prog" data-d="'+selDay+'">'+progress(selDay)+'</span></span></div>'+timelineHTML(selDay);
+  const ti=todayIndex();if(selDay===null||selDay>=DAYS.length)selDay=ti>=0&&ti<DAYS.length?ti:0;
+  $("#days").innerHTML=DAYS.map((d,i)=>{const c=counts(i);return '<button type="button" class="day-btn'+(i===ti?" is-today":"")+'" aria-pressed="'+(i===selDay)+'" data-day="'+i+'"><span>'+d.dow+'</span><b class="num">'+(+d.date.slice(8))+'</b><span class="num">'+(i===ti?"היום":c.ok+c.no?c.ok+"✓ "+c.no+"✕":"נוב׳")+'</span></button>'}).join("");
+  const d=DAYS[selDay];
+  $("#day-detail").innerHTML='<div class="eyebrow">'+dayLabel(selDay)+' · '+esc(d.area)+'</div><div class="row" style="justify-content:space-between;margin:2px 0 0"><h3 style="font-family:var(--f-display);font-size:1.9rem;font-weight:700;line-height:1">'+esc(d.title)+'</h3>'+progHTML(selDay)+'</div>'+barHTML(selDay)+timelineHTML(selDay)+
+    '<div class="tl-foot"><button class="btn sm ghost" type="button" data-add="new" data-di="'+selDay+'">+ הוסף פעילות</button><button class="btn sm" type="button" data-act="reset">איפוס למסלול המקורי</button></div>';
 }
-$("#days").addEventListener("click",function(e){var b=e.target.closest("[data-day]");if(!b)return;selDay=+b.getAttribute("data-day");S.set("selDay",selDay);renderPlan()});
+$("#days").addEventListener("click",e=>{const b=e.target.closest("[data-day]");if(!b)return;selDay=+b.getAttribute("data-day");S.set("selDay",selDay);renderCurrent()});
 
 /* ---------- places ---------- */
-var favs=S.get("favs",{}),pFilter="all";
+const favs=S.get("favs",{});let pFilter="all";
 function renderPlaces(){
-  var opts=[["all","הכל"],["fav","♥ מועדפים"]].concat(Object.keys(AREAS).map(function(k){return[k,AREAS[k]]})).concat([["rain","יום גשום"]]);
-  $("#pf").innerHTML=opts.map(function(o){return '<button type="button" data-pf="'+o[0]+'" aria-pressed="'+(pFilter===o[0])+'">'+o[1]+'</button>'}).join("");
-  var list=PLACES.filter(function(p){return pFilter==="all"||(pFilter==="fav"&&favs[p.id])||(pFilter==="rain"&&p.c==="גשם")||p.a===pFilter});
-  $("#places").innerHTML=list.length?list.map(function(p){
-    return '<article class="card place"><header><div><h3>'+esc(p.n)+'</h3><span class="kr">'+p.kr+'</span></div>'+
-      '<button class="fav" type="button" data-fav="'+p.id+'" aria-pressed="'+!!favs[p.id]+'" aria-label="מועדף">♥</button></header>'+
-      '<div class="row"><span class="chip">'+AREAS[p.a]+'</span><span class="chip hot">'+p.c+'</span></div>'+
-      '<p>'+esc(p.d)+'</p><div class="meta"><span>'+esc(p.m)+'</span></div><p class="tip">'+esc(p.tip)+'</p>'+
-      '<div class="row"><a class="btn sm primary" target="_blank" rel="noopener" href="'+naver(p.kr)+'">מפה</a></div></article>';
-  }).join(""):'<div class="card"><p style="margin:0">עוד לא סימנת מועדפים. לחץ על ♥ ליד מקום כדי לשמור אותו כאן.</p></div>';
+  const opts=[["all","הכל"],["fav","♥ מועדפים"]].concat(Object.keys(AREAS).map(k=>[k,AREAS[k]])).concat([["rain","יום גשום"]]);
+  $("#pf").innerHTML=opts.map(o=>'<button type="button" data-pf="'+o[0]+'" aria-pressed="'+(pFilter===o[0])+'">'+o[1]+'</button>').join("");
+  const list=PLACES.filter(p=>pFilter==="all"||(pFilter==="fav"&&favs[p.id])||(pFilter==="rain"&&p.c==="גשם")||p.a===pFilter);
+  $("#places").innerHTML=list.length?list.map(p=>'<article class="card pcard">'+phHTML("place:"+p.id,"","📷 גלריה")+
+    '<div class="pad"><header><div><h3>'+esc(p.n)+'</h3><span class="kr sub">'+p.kr+'</span></div>'+
+    '<button class="fav" type="button" data-fav="'+p.id+'" aria-pressed="'+!!favs[p.id]+'" aria-label="מועדף">♥</button></header>'+
+    '<div class="row"><span class="chip">'+AREAS[p.a]+'</span><span class="chip hot">'+p.c+'</span></div>'+
+    '<p>'+esc(p.d)+'</p><div class="meta"><span>'+esc(p.m)+'</span></div><p class="tip">'+esc(p.tip)+'</p>'+
+    '<div class="row"><a class="btn sm primary" target="_blank" rel="noopener" href="'+naver(p.kr)+'">מפה</a><button class="btn sm" type="button" data-add="place:'+p.id+'">+ למסלול</button></div></div></article>').join("")
+    :'<div class="card"><p style="margin:0">עוד לא סימנת מועדפים. לחץ על ♥ ליד מקום כדי לשמור אותו כאן.</p></div>';
 }
-$("#pf").addEventListener("click",function(e){var b=e.target.closest("[data-pf]");if(!b)return;pFilter=b.getAttribute("data-pf");renderPlaces()});
-$("#places").addEventListener("click",function(e){var b=e.target.closest("[data-fav]");if(!b)return;var id=b.getAttribute("data-fav");favs[id]=!favs[id];S.set("favs",favs);renderPlaces()});
+$("#pf").addEventListener("click",e=>{const b=e.target.closest("[data-pf]");if(!b)return;pFilter=b.getAttribute("data-pf");renderCurrent()});
+$("#places").addEventListener("click",e=>{const b=e.target.closest("[data-fav]");if(!b)return;const id=b.getAttribute("data-fav");favs[id]=!favs[id];S.set("favs",favs);b.setAttribute("aria-pressed",!!favs[id]);if(pFilter==="fav")renderCurrent()});
 
 /* ---------- food ---------- */
-var fFilter="all";
+let fFilter="all";
 function renderFood(){
-  var cats=["all"].concat(FOOD.map(function(f){return f.c}).filter(function(c,i,a){return a.indexOf(c)===i}));
-  $("#ff").innerHTML=cats.map(function(c){return '<button type="button" data-ff="'+c+'" aria-pressed="'+(fFilter===c)+'">'+(c==="all"?"הכל":c)+'</button>'}).join("");
-  $("#food").innerHTML=FOOD.filter(function(f){return fFilter==="all"||f.c===fFilter}).map(function(f){
-    return '<article class="card place" id="food-'+f.id+'"><header><div><h3>'+esc(f.n)+'</h3><span class="kr">'+f.kr+'</span></div><span class="chip num">'+f.p+'</span></header>'+
-      '<p>'+esc(f.d)+'</p><div class="meta"><span><b>איפה:</b> '+esc(f.w)+'</span></div>'+
-      '<div class="row"><a class="btn sm primary" target="_blank" rel="noopener" href="'+naver(f.q)+'">מפה</a></div></article>';
-  }).join("");
+  const cats=["all"].concat(FOOD.map(f=>f.c).filter((c,i,a)=>a.indexOf(c)===i));
+  $("#ff").innerHTML=cats.map(c=>'<button type="button" data-ff="'+c+'" aria-pressed="'+(fFilter===c)+'">'+(c==="all"?"הכל":c)+'</button>').join("");
+  $("#food").innerHTML=FOOD.filter(f=>fFilter==="all"||f.c===fFilter).map(f=>
+    '<button class="tile" type="button" data-lb="food:'+f.id+'" aria-label="'+esc(f.n)+' — תמונות ופרטים"><span class="ph" data-img="food:'+f.id+'">'+phInner(f)+'</span>'+
+    '<span class="price num">'+f.p+'</span><span class="cap"><b>'+esc(f.n)+'</b><span class="kr" style="text-align:right">'+f.kr+'</span></span></button>').join("");
 }
-$("#ff").addEventListener("click",function(e){var b=e.target.closest("[data-ff]");if(!b)return;fFilter=b.getAttribute("data-ff");renderFood()});
-document.addEventListener("click",function(e){var a=e.target.closest("[data-goto-food]");if(!a)return;fFilter="all";pendingFood=a.getAttribute("data-goto-food")});
-var pendingFood=null;
+$("#ff").addEventListener("click",e=>{const b=e.target.closest("[data-ff]");if(!b)return;fFilter=b.getAttribute("data-ff");renderCurrent()});
 
 /* ---------- tools ---------- */
-var rate=S.get("rate",400);
-$("#c-rate").value=rate;
-function fromKRW(){var k=parseFloat($("#c-krw").value.replace(/,/g,""))||0;$("#c-ils").value=(k/rate).toFixed(1)}
-function fromILS(){var s=parseFloat($("#c-ils").value)||0;$("#c-krw").value=Math.round(s*rate)}
-$("#c-krw").addEventListener("input",fromKRW);
-$("#c-ils").addEventListener("input",fromILS);
-$("#c-rate").addEventListener("input",function(){var r=parseFloat(this.value);if(r>0){rate=r;S.set("rate",r);fromKRW();renderExp()}});
+let rate=S.get("rate",400);$("#c-rate").value=rate;
+function fromKRW(){const k=parseFloat($("#c-krw").value.replace(/,/g,""))||0;$("#c-ils").value=(k/rate).toFixed(1)}
+function fromILS(){const s=parseFloat($("#c-ils").value)||0;$("#c-krw").value=Math.round(s*rate)}
+$("#c-krw").addEventListener("input",fromKRW);$("#c-ils").addEventListener("input",fromILS);
+$("#c-rate").addEventListener("input",function(){const r=parseFloat(this.value);if(r>0){rate=r;S.set("rate",r);fromKRW();renderExp()}});
 fromKRW();
-
-var exps=S.get("exps",[]);
-function renderExp(){
-  var tot=0;
-  $("#exp-list").innerHTML=exps.length?exps.map(function(x,i){tot+=x.a;return '<div class="exp"><span>'+esc(x.w)+' <span class="note">'+x.d+'</span></span><span class="num">'+fmtKRW(x.a)+' <button class="x" type="button" data-del="'+i+'" aria-label="מחק">×</button></span></div>'}).join("")
+const exps=S.get("exps",[]);
+function renderExp(){let tot=0;
+  $("#exp-list").innerHTML=exps.length?exps.map((x,i)=>{tot+=x.a;return '<div class="exp"><span>'+esc(x.w)+' <span class="note">'+x.d+'</span></span><span class="num">'+fmtKRW(x.a)+' <button class="x" type="button" data-del="'+i+'" aria-label="מחק">×</button></span></div>'}).join("")
     :'<p class="note" style="margin:0">עוד אין הוצאות. דוגמה: "גוקבאפ" · 10000.</p>';
-  $("#exp-krw").textContent=fmtKRW(tot);$("#exp-ils").textContent="≈ ₪"+Math.round(tot/rate).toLocaleString("en-US");
-}
-$("#exp-form").addEventListener("submit",function(e){e.preventDefault();var a=parseFloat($("#e-amt").value.replace(/,/g,""));var w=$("#e-what").value.trim();if(!w||!(a>0))return;
-  var k=kstNow();exps.unshift({w:w,a:a,d:k.getDate()+"."+(k.getMonth()+1)});S.set("exps",exps);$("#e-what").value="";$("#e-amt").value="";renderExp();toast("נוסף: "+fmtKRW(a))});
-$("#exp-list").addEventListener("click",function(e){var b=e.target.closest("[data-del]");if(!b)return;exps.splice(+b.getAttribute("data-del"),1);S.set("exps",exps);renderExp()});
+  $("#exp-krw").textContent=fmtKRW(tot);$("#exp-ils").textContent="≈ ₪"+Math.round(tot/rate).toLocaleString("en-US")}
+$("#exp-form").addEventListener("submit",e=>{e.preventDefault();const a=parseFloat($("#e-amt").value.replace(/,/g,""));const w=$("#e-what").value.trim();if(!w||!(a>0))return;
+  const k=kstNow();exps.unshift({w,a,d:k.getDate()+"."+(k.getMonth()+1)});S.set("exps",exps);$("#e-what").value="";$("#e-amt").value="";renderExp();toast("נוסף: "+fmtKRW(a))});
+$("#exp-list").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;exps.splice(+b.getAttribute("data-del"),1);S.set("exps",exps);renderExp()});
 renderExp();
-
-$("#phrases").innerHTML=PHRASES.map(function(p){return '<div class="phr"><span class="he">'+p[0]+'</span><span class="ko kr">'+p[1]+'</span><span class="say">'+p[2]+'</span></div>'}).join("");
-$("#todo").innerHTML=TODO.map(function(t,i){return '<label class="check"><input type="checkbox" id="todo'+i+'" data-store="todo'+i+'"><span>'+esc(t)+'</span></label>'}).join("");
-$$("[data-store]").forEach(function(el){el.checked=!!S.get("chk:"+el.getAttribute("data-store"),false)});
+$("#phrases").innerHTML=PHRASES.map(p=>'<div class="phr"><span class="he">'+p[0]+'</span><span class="ko kr">'+p[1]+'</span><span class="say">'+p[2]+'</span></div>').join("");
+$("#todo").innerHTML=TODO.map((t,i)=>'<label class="check"><input type="checkbox" id="todo'+i+'" data-store="todo'+i+'"><span>'+esc(t)+'</span></label>').join("");
+$$("[data-store]").forEach(el=>{el.checked=!!S.get("chk:"+el.getAttribute("data-store"),false);el.addEventListener("change",()=>S.set("chk:"+el.getAttribute("data-store"),el.checked))});
 
 /* ---------- hotel / taxi ---------- */
-$$("[data-taxi]").forEach(function(b){b.addEventListener("click",function(){$("#taxi").hidden=false;try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(function(){})}catch(e){}})});
-$("#taxi-close").addEventListener("click",function(){$("#taxi").hidden=true});
-$("#copy-addr").addEventListener("click",function(){var t=$("#addr-kr").textContent;
-  try{navigator.clipboard.writeText(t).then(function(){toast("הכתובת הועתקה")},sel)}catch(e){sel()}
-  function sel(){var r=document.createRange();r.selectNodeContents($("#addr-kr"));var s=getSelection();s.removeAllRanges();s.addRange(r);toast("הכתובת מסומנת — העתק ידנית")}});
+$$("[data-taxi]").forEach(b=>b.addEventListener("click",()=>{$("#taxi").hidden=false;try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{})}catch(e){}}));
+$("#taxi-close").addEventListener("click",()=>{$("#taxi").hidden=true});
+$("#copy-addr").addEventListener("click",()=>{const t=$("#addr-kr").textContent;
+  const sel=()=>{const r=document.createRange();r.selectNodeContents($("#addr-kr"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("הכתובת מסומנת — העתק ידנית")};
+  try{navigator.clipboard.writeText(t).then(()=>toast("הכתובת הועתקה"),sel)}catch(e){sel()}});
+document.addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(!$("#sheet").hidden)closeSheet();else if(!$("#lb").hidden)closeLB();else $("#taxi").hidden=true});
 
 /* ---------- router ---------- */
-var VIEWS=["today","plan","places","food","stay","tools"];
-function route(){
-  var v=(location.hash||"").replace("#","");if(VIEWS.indexOf(v)<0)v="today";
-  $$("section.view").forEach(function(s){s.hidden=s.getAttribute("data-view")!==v});
-  $$("nav.tabs a").forEach(function(a){if(a.getAttribute("href")==="#"+v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
-  if(v==="today")renderToday();if(v==="plan")renderPlan();if(v==="places")renderPlaces();
-  if(v==="food"){renderFood();if(pendingFood){var el=$("#food-"+pendingFood);pendingFood=null;if(el){el.scrollIntoView({block:"center"});return}}}
-  window.scrollTo(0,0);
+const VIEWS=["today","plan","places","food","stay","tools"];
+const cur=()=>{const v=(location.hash||"").replace("#","");return VIEWS.includes(v)?v:"today"};
+function renderCurrent(){const v=cur();
+  $$("section.view").forEach(s=>{s.hidden=s.getAttribute("data-view")!==v});
+  $$("nav.tabs a").forEach(a=>{if(a.getAttribute("href")==="#"+v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  const fn={today:renderToday,plan:renderPlan,places:renderPlaces,food:renderFood}[v];if(fn)fn();
+  hydrate($("#v-"+v));
 }
-window.addEventListener("hashchange",route);
+window.addEventListener("hashchange",()=>{closeLB();closeSheet();renderCurrent();window.scrollTo(0,0)});
 tick();setInterval(tick,30000);
-route();
+renderCurrent();
 })();
 </script>
